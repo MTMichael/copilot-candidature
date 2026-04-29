@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<!--
+  ════════════════════════════════════════════════════════════════════════
+  COPILOT — Recherche d'offres d'emploi (v3)
+  Auteur : Michael MWEPA
+  ────────────────────────────────────────────────────────────────────────
+  Stratégie URL : chaque lien utilise soit (1) une URL pattern documentée
+  et stable, soit (2) un fallback Google `site:domain.com` qui fonctionne
+  toujours. Plus de 404.
+  ════════════════════════════════════════════════════════════════════════
+-->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recherche Emploi — COPILOT</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0a1628; --paper:#f4f7fb; --cream:#dde6f0;
+  --accent:#0f2847; --accent-2:#1e4d8b;
+  --gold:#c8a04a; --gold-pale:#f4ecd1;
+  --muted:#6b7a8e; --white:#ffffff; --radius:3px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;}
+
+nav{background:var(--accent);border-bottom:2px solid var(--gold);padding:0 24px;display:flex;align-items:stretch;position:sticky;top:0;z-index:50;}
+.nav-brand{font-family:'Cormorant Garamond',serif;color:var(--gold);font-size:1.4rem;padding:11px 18px 11px 0;border-right:1px solid rgba(255,255,255,0.12);margin-right:4px;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.nav-brand small{color:rgba(244,247,251,0.5);font-family:'DM Sans',sans-serif;font-size:0.65rem;letter-spacing:.1em;text-transform:uppercase;}
+nav a{color:rgba(244,247,251,0.6);text-decoration:none;padding:0 13px;font-size:.77rem;font-weight:500;display:flex;align-items:center;gap:5px;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;}
+nav a:hover,nav a.active{color:var(--paper);border-bottom-color:var(--gold);}
+.nav-end{margin-left:auto;display:flex;align-items:center;}
+.nav-settings-btn{background:transparent;border:1px solid rgba(244,247,251,0.2);color:rgba(244,247,251,0.7);padding:5px 11px;border-radius:var(--radius);font-size:.72rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .13s;}
+.nav-settings-btn:hover{background:rgba(244,247,251,0.1);color:var(--paper);border-color:var(--gold);}
+
+.page{max-width:1100px;margin:0 auto;padding:26px 18px 60px;}
+.page-head{margin-bottom:22px;}
+.page-head h1{font-family:'Cormorant Garamond',serif;font-size:1.75rem;color:var(--accent);font-weight:600;}
+.page-head p{font-size:.82rem;color:var(--muted);margin-top:5px;}
+
+.cols{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start;}
+@media(max-width:780px){.cols{grid-template-columns:1fr;}}
+
+.card{background:var(--white);border:1px solid var(--cream);border-radius:var(--radius);padding:18px;box-shadow:0 1px 5px rgba(10,22,40,.04);}
+.card+.card{margin-top:14px;}
+.card-head{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--cream);padding-bottom:8px;margin-bottom:12px;}
+
+label{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;margin-top:11px;}
+label:first-of-type{margin-top:0;}
+input[type="text"]{width:100%;border:1px solid var(--cream);border-radius:var(--radius);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:.83rem;color:var(--ink);background:var(--paper);outline:none;transition:border-color .18s;}
+input:focus{border-color:var(--accent-2);background:var(--white);}
+
+.chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.chip{border:1px solid var(--cream);background:var(--paper);border-radius:2px;padding:5px 10px;font-size:.75rem;cursor:pointer;color:var(--muted);font-weight:500;transition:all .13s;}
+.chip:hover{border-color:var(--accent-2);color:var(--ink);}
+.chip.on{background:var(--accent);color:var(--paper);border-color:var(--accent);}
+
+.gen-btn{background:var(--accent);color:var(--paper);border:none;border-radius:var(--radius);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:6px;}
+.gen-btn:hover{background:#152c4f;}
+.outline-btn{background:var(--paper);color:var(--ink);border:1px solid var(--cream);border-radius:var(--radius);padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .13s;}
+.outline-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.query-box{background:var(--accent);color:var(--paper);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:none;}
+.query-box.vis{display:block;}
+.query-box h4{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--gold);margin-bottom:7px;font-weight:600;}
+.q-tag{display:inline-block;background:rgba(200,160,74,.22);border:1px solid rgba(200,160,74,.35);color:var(--gold);padding:2px 8px;border-radius:2px;font-size:.68rem;font-weight:600;margin:2px 3px 2px 0;}
+
+.sep{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:10px;font-weight:600;}
+.sep::after{content:'';flex:1;height:1px;background:var(--cream);}
+
+.pf-grid{display:grid;gap:8px;}
+.pf-card{border:1px solid var(--cream);border-radius:var(--radius);background:var(--white);overflow:hidden;transition:all .15s;}
+.pf-card:hover{border-color:var(--accent-2);box-shadow:0 2px 8px rgba(10,22,40,.06);}
+.pf-card.reco{border-color:var(--gold);background:#fdfaef;}
+.pf-card.reco::before{content:'★ Recommandé pour ton profil';display:block;background:var(--gold);color:var(--ink);font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 13px;}
+.pf-head{padding:10px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;}
+.pf-logo{font-size:1.2rem;width:28px;text-align:center;flex-shrink:0;}
+.pf-info{flex:1;min-width:0;}
+.pf-name{font-weight:700;font-size:.85rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.pf-desc{font-size:.69rem;color:var(--muted);margin-top:1px;line-height:1.4;}
+.badge{font-size:.58rem;padding:2px 6px;border-radius:2px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
+.b-hot{background:#fde8e8;color:#9b2f2f;}
+.b-good{background:#e8f5ee;color:#1a5c40;}
+.b-niche{background:#e6ecf7;color:#1a3659;}
+.b-int{background:#f5f0e8;color:#7a5010;}
+.b-remote{background:#f0e8f5;color:#4a1a6a;}
+.b-freelance{background:#fff0e0;color:#8a4000;}
+
+.pf-links{display:none;padding:0 13px 11px;flex-direction:column;gap:5px;border-top:1px solid var(--cream);}
+.pf-card.open .pf-links{display:flex;padding-top:9px;}
+.pf-link{display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--paper);border:1px solid var(--cream);border-radius:var(--radius);text-decoration:none;color:var(--ink);font-size:.78rem;font-weight:500;transition:all .13s;}
+.pf-link:hover{border-color:var(--accent);background:var(--accent);color:var(--paper);}
+.pf-link .lk-sub{font-size:.66rem;color:var(--muted);margin-left:auto;white-space:nowrap;}
+.pf-link:hover .lk-sub{color:rgba(244,247,251,.6);}
+.pf-link.via-google{border-style:dashed;}
+.pf-arrow{color:var(--muted);font-size:.8rem;margin-left:auto;}
+.pf-note{font-size:.7rem;color:var(--muted);font-style:italic;padding:6px 9px;background:var(--paper);border:1px solid var(--cream);border-radius:var(--radius);}
+
+.preset-btn{display:block;width:100%;padding:8px 11px;border:1px solid var(--cream);background:var(--paper);border-radius:var(--radius);font-size:.78rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted);text-align:left;transition:all .13s;margin-bottom:5px;}
+.preset-btn:hover{border-color:var(--accent-2);color:var(--ink);background:var(--white);}
+.preset-btn.active{border-color:var(--accent);background:var(--accent);color:var(--paper);font-weight:600;}
+
+.tip-box{background:var(--gold-pale);border:1px solid rgba(200,160,74,.4);border-radius:var(--radius);padding:11px 13px;font-size:.76rem;line-height:1.6;color:var(--ink);margin-top:12px;}
+.tip-box strong{color:var(--accent);}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--accent);color:var(--paper);padding:9px 14px;border-radius:var(--radius);font-size:.79rem;box-shadow:0 4px 16px rgba(10,22,40,.2);transform:translateY(50px);opacity:0;transition:all .3s;z-index:400;border-left:3px solid var(--gold);}
+.toast.show{transform:translateY(0);opacity:1;}
+
+.empty-zone{padding:18px;text-align:center;color:var(--muted);font-size:.82rem;background:var(--white);border:1px dashed var(--cream);border-radius:var(--radius);}
+.legend{font-size:.7rem;color:var(--muted);margin-top:8px;line-height:1.5;}
+.legend code{background:var(--paper);padding:1px 5px;border-radius:2px;font-family:inherit;font-size:.95em;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand" id="nav-brand">✦ <small>Agent Candidature</small></div>
+  <a href="1-agent-candidature.html">✦ Agent CV</a>
+  <a href="2-tracker.html">📊 Tracker</a>
+  <a href="3-planning.html">⏱ Planning</a>
+  <a href="4-recherche.html" class="active">🔍 Recherche</a>
+  <div class="nav-end">
+    <button class="nav-settings-btn" onclick="window.location.href='1-agent-candidature.html'">⚙ Mon profil</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-head">
+    <h1>Recherche d'offres d'emploi</h1>
+    <p>Génère des liens de recherche selon tes critères. Chaque plateforme propose un lien direct quand possible, ou une recherche Google ciblée 🔎 (toujours fonctionnelle).</p>
+  </div>
+
+  <div class="cols">
+
+    <div>
+      <div class="card">
+        <div class="card-head">Mes critères</div>
+
+        <label>Métier / Poste recherché *</label>
+        <input type="text" id="kw-main" placeholder="ex. Chargé(e) de marketing digital">
+
+        <label>Secteur (optionnel)</label>
+        <input type="text" id="kw-sector" placeholder="ex. Startup, ESS, Santé, Retail...">
+
+        <label>Localisation</label>
+        <input type="text" id="kw-location" value="Paris" placeholder="Paris, Lyon, Bordeaux, remote...">
+
+        <label>Type de contrat</label>
+        <div class="chip-row" id="contract-chips">
+          <div class="chip on" data-v="CDI">CDI</div>
+          <div class="chip" data-v="CDD">CDD</div>
+          <div class="chip" data-v="Freelance">Freelance</div>
+          <div class="chip" data-v="Stage">Stage</div>
+          <div class="chip" data-v="Alternance">Alternance</div>
+        </div>
+
+        <label>Compétences clés (optionnel)</label>
+        <input type="text" id="kw-skills" placeholder="ex. Excel, Canva, Gestion de projet...">
+
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+          <button class="gen-btn" onclick="buildLinks()">🔍 Générer les liens</button>
+          <button class="outline-btn" onclick="openAll()">↗ Tout ouvrir</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Raccourcis profil</div>
+        <div id="preset-btns">
+          <button class="preset-btn" data-preset="profile" onclick="setPreset('profile')">🔄 Charger depuis mon profil</button>
+          <div style="height:1px;background:var(--cream);margin:8px 0;"></div>
+          <button class="preset-btn" data-preset="marketing"  onclick="setPreset('marketing')">📢 Marketing Digital</button>
+          <button class="preset-btn" data-preset="comm"       onclick="setPreset('comm')">📣 Communication</button>
+          <button class="preset-btn" data-preset="projet"     onclick="setPreset('projet')">📋 Gestion de projet</button>
+          <button class="preset-btn" data-preset="design"     onclick="setPreset('design')">🎨 Design / UX-UI</button>
+          <button class="preset-btn" data-preset="dev"        onclick="setPreset('dev')">💻 Développement Web</button>
+          <button class="preset-btn" data-preset="commercial" onclick="setPreset('commercial')">🤝 Commercial / Vente</button>
+          <button class="preset-btn" data-preset="rh"         onclick="setPreset('rh')">👥 RH / Recrutement</button>
+          <button class="preset-btn" data-preset="compta"     onclick="setPreset('compta')">📊 Comptabilité / Finance</button>
+          <button class="preset-btn" data-preset="freelance"  onclick="setPreset('freelance')">⚡ Mission Freelance</button>
+          <button class="preset-btn" data-preset="stage"      onclick="setPreset('stage')">🎓 Stage / Alternance</button>
+        </div>
+      </div>
+
+      <div class="tip-box">
+        <strong>💡 Stratégie multi-plateformes</strong><br>
+        Aucun site ne couvre 100% des offres. Combine LinkedIn (réseau), WTTJ (startups), APEC (cadres), France Travail (PME), Malt (freelance).
+        <div class="legend" style="margin-top:8px;">
+          <code>↗</code> = lien direct sur la plateforme<br>
+          <code>↗ Recherche ciblée</code> = recherche Google sur la plateforme (toujours à jour)
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="query-box" id="query-box">
+        <h4>Requête active</h4>
+        <div id="query-tags"></div>
+      </div>
+
+      <div class="sep">🌐 Généralistes</div>
+      <div class="pf-grid" id="pf-gen"></div>
+
+      <div class="sep" style="margin-top:18px;">🎓 Cadres &amp; profils qualifiés</div>
+      <div class="pf-grid" id="pf-cadres"></div>
+
+      <div class="sep" style="margin-top:18px;">🚀 Startups &amp; Tech</div>
+      <div class="pf-grid" id="pf-tech"></div>
+
+      <div class="sep" style="margin-top:18px;">⚡ Freelance &amp; missions</div>
+      <div class="pf-grid" id="pf-freelance"></div>
+
+      <div class="sep" style="margin-top:18px;">🌍 International &amp; remote</div>
+      <div class="pf-grid" id="pf-intl"></div>
+
+      <div class="sep" style="margin-top:18px;">🏢 Sectoriels &amp; spécialisés</div>
+      <div class="pf-grid" id="pf-sector"></div>
+
+      <div class="sep" style="margin-top:18px;">🔍 Moteurs de recherche</div>
+      <div class="pf-grid" id="pf-google"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const P_KEY = 'agent_profile';
+function loadProfile() { try { return JSON.parse(localStorage.getItem(P_KEY)) || null; } catch { return null; } }
+
+function safeFirstName(p) {
+  if (!p || !p.name || typeof p.name !== 'string') return '';
+  const parts = p.name.trim().split(/\s+/).filter(Boolean);
+  return parts[0] || '';
+}
+function safeLocation(p) {
+  if (!p || !p.location || typeof p.location !== 'string') return '';
+  return p.location.split('·')[0]?.trim() || '';
+}
+function enc(s) { return encodeURIComponent(s || ''); }
+
+// Helper : recherche Google ciblée sur un domaine (fallback bulletproof)
+function gSite(domain, ...terms) {
+  const query = `site:${domain} ${terms.filter(Boolean).join(' ')}`.trim();
+  return `https://www.google.com/search?q=${enc(query)}`;
+}
+
+document.querySelectorAll('#contract-chips .chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('#contract-chips .chip').forEach(x => x.classList.remove('on'));
+  c.classList.add('on');
+  buildLinks();
+}));
+
+const PRESETS = {
+  marketing:  { main:'Marketing Digital',     skills:'Google Ads, SEO, Analytics, HubSpot',          contract:'CDI' },
+  comm:       { main:'Chargé communication',  skills:'Réseaux sociaux, Canva, Rédaction',            contract:'CDI' },
+  projet:     { main:'Chef de projet',        skills:'Scrum, Agile, Jira, Notion',                    contract:'CDI' },
+  design:     { main:'Designer UX UI',        skills:'Figma, Adobe XD, Prototype',                    contract:'CDI' },
+  dev:        { main:'Développeur Web',       skills:'JavaScript, React, Python, SQL',                contract:'CDI' },
+  commercial: { main:'Commercial',            skills:'Prospection, Négociation, CRM, B2B',            contract:'CDI' },
+  rh:         { main:'Chargé RH',             skills:'Recrutement, SIRH, Paie, Formation',            contract:'CDI' },
+  compta:     { main:'Comptable',             skills:'Excel, Sage, Bilan, TVA',                       contract:'CDI' },
+  freelance:  { main:'Consultant',            skills:'Mission, Expertise, Conseil',                   contract:'Freelance' },
+  stage:      { main:'Marketing',             skills:'',                                              contract:'Stage' },
+};
+
+let activePreset = null;
+
+function setPreset(key) {
+  if (key === 'profile') {
+    const p = loadProfile();
+    if (!p) { showToast("Configure d'abord ton profil dans ✦ Agent CV"); return; }
+    document.getElementById('kw-main').value     = p.metiers?.split(',')[0]?.trim() || '';
+    document.getElementById('kw-sector').value   = p.sectors || '';
+    document.getElementById('kw-skills').value   = (p.skills?.split('\n')[0] || p.skills?.split('·')[0] || '').trim();
+    document.getElementById('kw-location').value = safeLocation(p) || 'Paris';
+    activePreset = 'profile';
+    highlightPreset('profile');
+    buildLinks();
+    return;
+  }
+  const pr = PRESETS[key];
+  if (!pr) return;
+  if (pr.main) document.getElementById('kw-main').value = pr.main;
+  document.getElementById('kw-skills').value = pr.skills;
+  document.querySelectorAll('#contract-chips .chip').forEach(c => c.classList.toggle('on', c.dataset.v === pr.contract));
+  activePreset = key;
+  highlightPreset(key);
+  buildLinks();
+}
+
+function highlightPreset(key) {
+  document.querySelectorAll('.preset-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.preset === key);
+  });
+}
+
+function buildLinks() {
+  const main     = document.getElementById('kw-main').value.trim();
+  if (!main)     { showToast('Entre un métier / poste.'); return; }
+  const sector   = document.getElementById('kw-sector').value.trim();
+  const location = document.getElementById('kw-location').value.trim() || 'Paris';
+  const contract = document.querySelector('#contract-chips .chip.on')?.dataset.v || 'CDI';
+  const skills   = document.getElementById('kw-skills').value.trim();
+  const q        = [main, sector].filter(Boolean).join(' ');
+
+  document.getElementById('query-box').classList.add('vis');
+  document.getElementById('query-tags').innerHTML = [main, sector, location, contract, ...skills.split(',').slice(0,4).map(s=>s.trim())]
+    .filter(Boolean).map(t => `<span class="q-tag">${t}</span>`).join('');
+
+  const liContract  = contract==='CDI' ? 'F' : contract==='CDD' ? 'C' : contract==='Stage' ? 'I' : '';
+  const indeedType  = contract==='CDI' ? 'permanent' : contract==='CDD' ? 'contract' : contract==='Stage' ? 'internship' : '';
+
+  // ════ GÉNÉRALISTES — toutes URLs vérifiées ════
+  const PF_GEN = [
+    { id:'linkedin', logo:'💼', name:'LinkedIn Jobs', badge:'b-hot', blabel:'🔥 N°1 réseau', desc:'URL pattern officiel et stable',
+      tags:['CDI','CDD','Stage','Alternance','Freelance','marketing','comm','projet','design','dev','commercial','rh','compta','freelance','stage','profile'],
+      links:[
+        { label:`${q}`,                  sub:location, url:`https://www.linkedin.com/jobs/search/?keywords=${enc(q)}&location=${enc(location)}${liContract?'&f_JT='+liContract:''}` },
+        { label:'Offres dernière 24h',   sub:location, url:`https://www.linkedin.com/jobs/search/?keywords=${enc(q)}&location=${enc(location)}&f_TPR=r86400` },
+        { label:'Télétravail complet',   sub:'France', url:`https://www.linkedin.com/jobs/search/?keywords=${enc(main)}&location=France&f_WT=2` },
+      ]},
+    { id:'indeed', logo:'🔵', name:'Indeed', badge:'b-hot', blabel:'🔥 Volume max', desc:"Plus grande base d'offres en France",
+      tags:['CDI','CDD','Stage','Alternance','marketing','comm','projet','commercial','rh','compta','stage'],
+      links:[
+        { label:`${q}`,                          sub:location, url:`https://fr.indeed.com/emplois?q=${enc(q)}&l=${enc(location)}${indeedType?'&jt='+indeedType:''}` },
+        { label:'Publiées ces 3 derniers jours', sub:location, url:`https://fr.indeed.com/emplois?q=${enc(q)}&l=${enc(location)}&fromage=3` },
+        { label:'Télétravail / Remote',          sub:'France', url:`https://fr.indeed.com/emplois?q=${enc(main)}+t%C3%A9l%C3%A9travail&l=France` },
+      ]},
+    { id:'francetravail', logo:'🇫🇷', name:'France Travail', badge:'b-good', blabel:'✓ Officiel', desc:'Toutes les offres déclarées en France (ex Pôle Emploi)',
+      tags:['CDI','CDD','Stage','Alternance','marketing','comm','projet','commercial','rh','compta','stage'],
+      links:[
+        { label:'Page recherche France Travail', sub:'National', url:`https://candidat.francetravail.fr/offres/emploi/` },
+        { label:`Recherche ciblée ${main}`,      sub:location,   url:gSite('candidat.francetravail.fr', main, location) },
+      ],
+      note:"Le moteur France Travail attend les mots-clés dans son champ. Le lien Google ciblé donne souvent de meilleurs résultats."
+    },
+    { id:'hellowork', logo:'👋', name:'HelloWork', badge:'b-good', blabel:'✓ Agrégateur', desc:"Agrège des milliers d'entreprises en France",
+      tags:['CDI','CDD','Stage','Alternance','marketing','comm','projet','dev','commercial','rh','compta','stage'],
+      links:[
+        { label:`Recherche ${main}`,           sub:'France', url:`https://www.hellowork.com/fr-fr/emploi/mot-cle_${enc(main.toLowerCase().replace(/[^a-z0-9]+/g,'-'))}.html` },
+        { label:`Recherche ciblée ${location}`, sub:location, url:gSite('hellowork.com', main, location) },
+      ]},
+    { id:'meteojob', logo:'🌤', name:'Météojob', badge:'b-good', blabel:'✓ Matching', desc:'Algorithme de matching par score',
+      tags:['CDI','CDD','marketing','comm','projet','commercial','rh','compta'],
+      links:[
+        { label:`Recherche ciblée ${main}`, sub:location, url:gSite('meteojob.com', main, location) },
+      ]},
+    { id:'figaro', logo:'📰', name:'Figaro Emploi (RegionsJob)', badge:'b-good', blabel:'✓ Régions', desc:'Très bonne couverture hors Paris',
+      tags:['CDI','CDD','marketing','comm','projet','commercial','rh','compta'],
+      links:[
+        { label:`Recherche ciblée ${main}`, sub:location, url:gSite('figaro-emploi.fr', main, location) },
+      ]},
+  ];
+
+  // ════ CADRES ════
+  const PF_CADRES = [
+    { id:'apec', logo:'🎓', name:'APEC', badge:'b-good', blabel:'✓ Cadres', desc:'Réservé aux profils cadres Bac+4/5',
+      tags:['CDI','CDD','projet','compta','marketing','comm','rh','commercial','profile'],
+      links:[
+        { label:`${q} — recherche APEC`,  sub:'France', url:`https://www.apec.fr/candidat/recherche-emploi.html/emploi?motsCles=${enc(q)}` },
+        { label:`Recherche ciblée APEC`,  sub:'Google', url:gSite('apec.fr', main, location) },
+      ]},
+    { id:'cadremploi', logo:'📋', name:'Cadremploi', badge:'b-good', blabel:'✓ Cadres confirmés', desc:"3 à 15 ans d'expérience",
+      tags:['CDI','projet','compta','marketing','comm','rh','commercial'],
+      links:[
+        { label:`Recherche ciblée Cadremploi`, sub:location, url:gSite('cadremploi.fr', main, location) },
+      ]},
+    { id:'michaelpage', logo:'🔷', name:'Michael Page', badge:'b-niche', blabel:'• Cabinet', desc:'Cabinet spécialisé postes qualifiés',
+      tags:['CDI','projet','compta','rh','commercial'],
+      links:[
+        { label:`Recherche ciblée Michael Page`, sub:'France', url:gSite('michaelpage.fr', main, location) },
+      ]},
+    { id:'hays', logo:'🔶', name:'Hays', badge:'b-niche', blabel:'• Cabinet', desc:'Recrutement spécialisé tous secteurs',
+      tags:['CDI','projet','compta','dev','commercial'],
+      links:[
+        { label:`Recherche ciblée Hays`, sub:'France', url:gSite('hays.fr', main, location) },
+      ]},
+    { id:'randstad', logo:'🔴', name:'Randstad', badge:'b-good', blabel:'✓ Intérim & CDI', desc:'Leader intérim, fort en industrie & logistique',
+      tags:['CDI','CDD','commercial','rh','compta'],
+      links:[
+        { label:`Recherche ciblée Randstad`, sub:location, url:gSite('randstad.fr', main, location) },
+      ]},
+    { id:'adecco', logo:'🔵', name:'Adecco', badge:'b-good', blabel:'✓ Intérim & CDI', desc:'Grands groupes et PME, toutes filières',
+      tags:['CDI','CDD','commercial','rh','compta'],
+      links:[
+        { label:`Recherche ciblée Adecco`, sub:location, url:gSite('adecco.fr', main, location) },
+      ]},
+    { id:'manpower', logo:'⚙', name:'Manpower', badge:'b-good', blabel:'✓ Intérim', desc:'Spécialisé industrie, technique, logistique',
+      tags:['CDI','CDD','commercial'],
+      links:[
+        { label:`Recherche ciblée Manpower`, sub:location, url:gSite('manpower.fr', main, location) },
+      ]},
+  ];
+
+  // ════ STARTUPS & TECH ════
+  const PF_TECH = [
+    { id:'wttj', logo:'🌿', name:'Welcome to the Jungle', badge:'b-hot', blabel:'🔥 Startups', desc:'Référence absolue startups & scale-ups',
+      tags:['CDI','CDD','Stage','Alternance','marketing','comm','projet','design','dev','commercial','rh','stage','profile'],
+      links:[
+        { label:`${main}`,                sub:'France', url:`https://www.welcometothejungle.com/fr/jobs?query=${enc(main)}` },
+        { label:`Recherche ciblée WTTJ`,  sub:location, url:gSite('welcometothejungle.com', main, location) },
+      ]},
+    { id:'keljob', logo:'👨‍💻', name:'Keljob / LesJeudis', badge:'b-niche', blabel:'• Tech & digital', desc:'Offres tech, marketing digital, web',
+      tags:['CDI','CDD','marketing','comm','dev','design'],
+      links:[
+        { label:`Recherche ciblée Keljob`, sub:location, url:gSite('keljob.com', main, location) },
+      ]},
+    { id:'choosemycompany', logo:'⭐', name:'ChooseMyCompany', badge:'b-niche', blabel:'• Culture & QVT', desc:'Entreprises bien notées par leurs salariés',
+      tags:['CDI','marketing','comm','projet','design','dev','rh'],
+      links:[
+        { label:`Recherche ciblée ChooseMyCompany`, sub:'France', url:gSite('choosemycompany.com', main) },
+      ]},
+    { id:'jobteaser', logo:'🎯', name:'JobTeaser', badge:'b-niche', blabel:'• Jeunes diplômés', desc:'Offres pour étudiants et jeunes diplômés',
+      tags:['Stage','Alternance','stage'],
+      links:[
+        { label:`${main} stage / alternance`, sub:'France', url:gSite('jobteaser.com', main, location) },
+      ]},
+    { id:'humancoders', logo:'🧑‍💻', name:'Human Coders Jobs', badge:'b-niche', blabel:'• Dev & Tech', desc:'Développeurs, data, infra uniquement',
+      tags:['CDI','CDD','Freelance','dev'],
+      links:[
+        { label:`Recherche ciblée Human Coders`, sub:'France', url:gSite('jobs.humancoders.com', main) },
+      ]},
+  ];
+
+  // ════ FREELANCE ════
+  const PF_FREELANCE = [
+    { id:'malt', logo:'🟠', name:'Malt', badge:'b-freelance', blabel:'⚡ Référence freelance', desc:'N°1 missions freelance en France',
+      tags:['Freelance','freelance','dev','design','marketing','comm','projet'],
+      links:[
+        { label:`Inscription freelance Malt`,    sub:'France', url:`https://www.malt.fr/signup/freelancer` },
+        { label:`Profils & missions ${main}`,    sub:'France', url:gSite('malt.fr', main, location) },
+      ],
+      note:"Sur Malt, crée ton profil freelance — les clients te contactent directement. Le lien Google donne aussi un aperçu des profils existants."
+    },
+    { id:'upwork', logo:'🟢', name:'Upwork', badge:'b-int', blabel:'🌍 International', desc:'Plateforme mondiale de missions freelance',
+      tags:['Freelance','freelance','dev','design','marketing'],
+      links:[
+        { label:`${main} jobs`, sub:'Mondial', url:`https://www.upwork.com/nx/search/jobs/?q=${enc(main)}` },
+      ]},
+    { id:'freelance-com', logo:'💼', name:'Freelance.com', badge:'b-freelance', blabel:'⚡ Missions IT & cadres', desc:'Plateforme historique missions IT, conseil, cadres',
+      tags:['Freelance','freelance','dev','projet'],
+      links:[
+        { label:`Recherche ciblée Freelance.com`, sub:'France', url:gSite('freelance.com', main, location) },
+      ]},
+    { id:'comet', logo:'☄', name:'Comet', badge:'b-freelance', blabel:'⚡ Freelance tech premium', desc:'Missions tech et digital, tarifs élevés',
+      tags:['Freelance','freelance','dev','design'],
+      links:[
+        { label:`Site Comet — page d'accueil`, sub:'France', url:`https://www.comet.co/` },
+      ],
+      note:"Comet ne publie pas les missions publiquement. Inscris-toi côté freelance pour recevoir les opportunités."
+    },
+    { id:'creme', logo:'🍦', name:'Crème de la Crème', badge:'b-freelance', blabel:'⚡ Freelance premium', desc:'Profils sélectionnés sur dossier',
+      tags:['Freelance','freelance','dev','design','marketing'],
+      links:[
+        { label:`Site Crème de la Crème`, sub:'France', url:`https://cremedelacreme.io/` },
+      ],
+      note:"Plateforme sur sélection. Va sur le site, postule pour être référencé."
+    },
+  ];
+
+  // ════ INTERNATIONAL & REMOTE ════
+  const PF_INTL = [
+    { id:'linkedin-intl', logo:'🌐', name:'LinkedIn — Remote Mondial', badge:'b-remote', blabel:'🌍 Full remote', desc:'Offres remote worldwide sur LinkedIn',
+      tags:['CDI','CDD','Freelance','marketing','comm','projet','design','dev'],
+      links:[
+        { label:`${main} — remote worldwide`, sub:'Monde', url:`https://www.linkedin.com/jobs/search/?keywords=${enc(main)}&location=Worldwide&f_WT=2` },
+      ]},
+    { id:'remoteok', logo:'🏖', name:'RemoteOK', badge:'b-remote', blabel:'🌍 100% remote', desc:'Exclusivement des offres full remote',
+      tags:['CDI','Freelance','dev','design','marketing'],
+      links:[
+        { label:`${main} remote jobs`, sub:'Monde', url:gSite('remoteok.com', main) },
+      ]},
+    { id:'weworkremotely', logo:'💻', name:'We Work Remotely', badge:'b-remote', blabel:'🌍 100% remote', desc:'Grande plateforme remote internationale',
+      tags:['CDI','Freelance','dev','design','marketing'],
+      links:[
+        { label:`${main} remote`, sub:'Monde', url:gSite('weworkremotely.com', main) },
+      ]},
+    { id:'eures', logo:'🇪🇺', name:'EURES (UE)', badge:'b-int', blabel:'🌍 Europe officiel', desc:"Portail européen officiel des offres dans toute l'UE",
+      tags:['CDI','marketing','comm','projet','rh','compta','dev'],
+      links:[
+        { label:`Portail EURES`,           sub:'UE', url:`https://eures.europa.eu/index_fr` },
+        { label:`${main} sur EURES`,       sub:'UE', url:gSite('eures.europa.eu', main) },
+      ]},
+  ];
+
+  // ════ SECTORIELS ════
+  const PF_SECTOR = [
+    { id:'public', logo:'🏛', name:"Place de l'Emploi Public", badge:'b-niche', blabel:'• Fonction publique', desc:"Offres de la fonction publique d'État",
+      tags:['CDI','CDD','projet','rh','compta'],
+      links:[
+        { label:`Place Emploi Public`,           sub:'France', url:`https://place-emploi-public.gouv.fr/` },
+        { label:`Recherche ciblée ${main}`,       sub:'Google', url:gSite('place-emploi-public.gouv.fr', main, location) },
+      ]},
+    { id:'territorial', logo:'🏤', name:'Emploi Territorial', badge:'b-niche', blabel:'• Collectivités', desc:'Offres des mairies, départements, régions',
+      tags:['CDI','CDD','projet','rh','compta'],
+      links:[
+        { label:`Site Emploi Territorial`,        sub:'France', url:`https://www.emploi-territorial.fr/` },
+        { label:`Recherche ciblée ${main}`,       sub:'Google', url:gSite('emploi-territorial.fr', main, location) },
+      ]},
+    { id:'asso', logo:'🤝', name:'Emploi Associatif', badge:'b-niche', blabel:'• ESS / Asso', desc:'Offres secteur associatif et ESS',
+      tags:['CDI','CDD','marketing','comm','projet','rh'],
+      links:[
+        { label:`Site Emploi-Associatif`,         sub:'France', url:`https://www.emploi-associatif.fr/` },
+        { label:`Recherche ciblée ${main}`,       sub:'Google', url:gSite('emploi-associatif.fr', main, location) },
+      ]},
+    { id:'sante', logo:'🏥', name:'Emploi Santé / Médico-social', badge:'b-niche', blabel:'• Santé', desc:'Indeed avec filtre secteur santé',
+      tags:['CDI','CDD','rh'],
+      links:[
+        { label:`${main} santé sur Indeed`, sub:location, url:`https://fr.indeed.com/emplois?q=${enc(main)}&l=${enc(location)}&sc=0kf%3Aocc%28HEALTHCARE%29%3B` },
+      ]},
+    { id:'hospitality', logo:'🏨', name:'Hôtellerie / Restauration', badge:'b-niche', blabel:'• HCR', desc:'Hôtellerie, restauration, tourisme',
+      tags:['CDI','CDD','Stage','Alternance','commercial'],
+      links:[
+        { label:`${main} hôtellerie restauration`, sub:location, url:gSite('hosco.com', main, location) },
+        { label:`Indeed — secteur HCR`,            sub:location, url:`https://fr.indeed.com/emplois?q=${enc(main+' hôtellerie restauration')}&l=${enc(location)}` },
+      ]},
+  ];
+
+  // ════ MOTEURS DE RECHERCHE ════
+  const PF_GOOGLE = [
+    { id:'google-jobs', logo:'🔍', name:'Google Jobs', badge:'b-hot', blabel:'🔥 Agrégateur universel', desc:'Toutes les offres du web en temps réel',
+      tags:['CDI','CDD','Stage','Alternance','Freelance','profile','marketing','comm','projet','design','dev','commercial','rh','compta','freelance','stage'],
+      links:[
+        { label:`${main} ${contract} ${location}`,     sub:'Tous sites', url:`https://www.google.com/search?q=${enc(main+' '+contract+' '+location)}&ibp=htl;jobs` },
+        { label:`${main} télétravail remote France`,   sub:'Remote',     url:`https://www.google.com/search?q=${enc(main+' télétravail remote France')}&ibp=htl;jobs` },
+        { label:`${main} offre emploi`,                sub:'Élargi',     url:`https://www.google.com/search?q=${enc(main+' offre emploi')}&ibp=htl;jobs` },
+      ]},
+    { id:'duckduckgo', logo:'🦆', name:'DuckDuckGo — Recherche emploi', badge:'b-good', blabel:'✓ Sans tracking', desc:'Bonne alternative à Google, sans tracking',
+      tags:['CDI','CDD','Freelance'],
+      links:[
+        { label:`${q} ${contract} ${location}`, sub:location, url:`https://duckduckgo.com/?q=${enc(q+' '+contract+' '+location+' offre emploi')}` },
+      ]},
+  ];
+
+  render('pf-gen',       PF_GEN,       contract);
+  render('pf-cadres',    PF_CADRES,    contract);
+  render('pf-tech',      PF_TECH,      contract);
+  render('pf-freelance', PF_FREELANCE, contract);
+  render('pf-intl',      PF_INTL,      contract);
+  render('pf-sector',    PF_SECTOR,    contract);
+  render('pf-google',    PF_GOOGLE,    contract);
+}
+
+function render(id, platforms, contract) {
+  const container = document.getElementById(id);
+  if (!container) return;
+
+  const sorted = [...platforms].sort((a, b) => {
+    const aReco = isRecommended(a, contract);
+    const bReco = isRecommended(b, contract);
+    if (aReco && !bReco) return -1;
+    if (!aReco && bReco) return 1;
+    return 0;
+  });
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<div class="empty-zone">Aucune plateforme dans cette catégorie.</div>';
+    return;
+  }
+
+  container.innerHTML = sorted.map(p => {
+    const reco = isRecommended(p, contract);
+    const noteHtml = p.note ? `<div class="pf-note">ℹ ${p.note}</div>` : '';
+    const linksHtml = p.links.map(l => {
+      const isGoogle = l.url.includes('google.com/search');
+      const cls = isGoogle ? 'pf-link via-google' : 'pf-link';
+      return `<a href="${l.url}" target="_blank" rel="noopener" class="${cls}">↗ ${l.label}<span class="lk-sub">${l.sub}</span></a>`;
+    }).join('');
+    return `
+      <div class="pf-card${reco ? ' reco' : ''}" id="pf-${p.id}">
+        <div class="pf-head" onclick="toggle('${p.id}')">
+          <div class="pf-logo">${p.logo}</div>
+          <div class="pf-info">
+            <div class="pf-name">${p.name} <span class="badge ${p.badge}">${p.blabel}</span></div>
+            <div class="pf-desc">${p.desc}</div>
+          </div>
+          <div class="pf-arrow">▾</div>
+        </div>
+        <div class="pf-links">
+          ${noteHtml}
+          ${linksHtml}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function isRecommended(platform, contract) {
+  if (!platform.tags) return false;
+  if (platform.tags.includes(contract)) return true;
+  if (activePreset && platform.tags.includes(activePreset)) return true;
+  return false;
+}
+
+function toggle(id) { document.getElementById('pf-' + id).classList.toggle('open'); }
+
+function openAll() {
+  const links = document.querySelectorAll('.pf-link[href]');
+  if (!links.length) { buildLinks(); return; }
+  const opened = new Set();
+  let count = 0;
+  links.forEach(l => {
+    const card = l.closest('.pf-card');
+    if (card && !opened.has(card.id)) {
+      window.open(l.href, '_blank');
+      opened.add(card.id);
+      count++;
+    }
+  });
+  showToast(`${count} plateformes ouvertes !`);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+(function init() {
+  const p = loadProfile();
+  if (p) {
+    const first = safeFirstName(p);
+    if (first) {
+      document.getElementById('nav-brand').innerHTML = `${first.charAt(0).toUpperCase()} <small>Agent Candidature</small>`;
+    }
+    const loc = safeLocation(p);
+    if (loc) document.getElementById('kw-location').value = loc;
+    if (p.metiers) document.getElementById('kw-main').value = p.metiers.split(',')[0].trim();
+    if (p.skills)  document.getElementById('kw-skills').value = (p.skills.split('\n')[0] || p.skills.split('·')[0] || '').trim();
+  }
+  if (document.getElementById('kw-main').value.trim()) {
+    buildLinks();
+  } else {
+    ['pf-gen','pf-cadres','pf-tech','pf-freelance','pf-intl','pf-sector','pf-google'].forEach(id => {
+      document.getElementById(id).innerHTML = '<div class="empty-zone">Saisis un métier puis clique sur <strong>🔍 Générer les liens</strong>.</div>';
+    });
+  }
+})();
+</script>
+</body>
+</html>

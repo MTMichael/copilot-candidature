@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<!--
+  COPILOT — Tracker Candidatures
+  Auteur : Michael MWEPA
+  Version : 2.0
+  Module : Suivi candidatures + relances
+-->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracker Candidatures</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a1628; --paper: #f4f7fb; --cream: #dde6f0;
+    --gold: #c8a04a; --muted: #6b7a8e;
+    --accent: #0f2847; --accent-2: #1e4d8b;
+    --white: #ffffff; --radius: 4px;
+    --s-envoyee: #1a5c4a; --s-relance: #c8a04a; --s-entretien: #1e4d8b;
+    --s-refus: #8b1a1a; --s-attente: #6b7a8e; --s-offre: #2a7a2a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+
+  nav { background: var(--accent); border-bottom: 2px solid var(--gold); padding: 0 24px; display: flex; align-items: stretch; position: sticky; top: 0; z-index: 50; }
+  .nav-brand { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-size: 1.4rem; padding: 11px 18px 11px 0; border-right: 1px solid rgba(255,255,255,0.12); margin-right: 4px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .nav-brand small { color: rgba(244,247,251,0.55); font-family:'DM Sans',sans-serif; font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; }
+  nav a { color: rgba(244,247,251,0.6); text-decoration: none; padding: 0 13px; font-size: 0.77rem; font-weight: 500; display: flex; align-items: center; gap: 5px; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; white-space: nowrap; }
+  nav a:hover, nav a.active { color: var(--paper); border-bottom-color: var(--gold); }
+  .nav-end { margin-left:auto; display:flex; align-items:center; }
+  .nav-settings-btn { background:none; border:1px solid rgba(255,255,255,0.18); color:rgba(244,247,251,0.75); padding:5px 10px; border-radius:var(--radius); font-size:0.74rem; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.14s; }
+  .nav-settings-btn:hover { border-color:var(--gold); color:var(--paper); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  /* HEADER STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
+  @media (max-width: 700px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { background: var(--white); border: 1px solid var(--cream); border-radius: var(--radius); padding: 14px 18px; text-align: center; }
+  .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; color: var(--accent); line-height: 1; }
+  .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+  .stat-card.highlight { background: var(--accent); border-color: var(--accent); }
+  .stat-card.highlight .stat-num { color: var(--gold); }
+  .stat-card.highlight .stat-label { color: rgba(244,247,251,0.65); }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .toolbar input[type="text"] { flex: 1; min-width: 180px; border: 1px solid var(--cream); border-radius: var(--radius); padding: 8px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.84rem; background: var(--white); outline: none; }
+  .toolbar input:focus { border-color: var(--accent-2); }
+  .toolbar select { border: 1px solid var(--cream); border-radius: var(--radius); padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; background: var(--white); outline: none; cursor: pointer; }
+  .btn { padding: 8px 16px; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: var(--paper); }
+  .btn-primary:hover { background: #0a1d35; }
+  .btn-gold { background: var(--gold); color: var(--ink); }
+  .btn-gold:hover { background: #b8902f; }
+  .btn-outline { background: var(--white); color: var(--ink); border: 1px solid var(--cream); }
+  .btn-outline:hover { border-color: var(--accent); }
+
+  /* TABLE */
+  .table-wrapper { background: var(--white); border: 1px solid var(--cream); border-radius: var(--radius); overflow-x: auto; box-shadow: 0 1px 8px rgba(15,40,71,0.05); }
+  table { width: 100%; border-collapse: collapse; min-width: 780px; }
+  thead tr { background: var(--accent); color: var(--paper); }
+  thead th { padding: 11px 14px; text-align: left; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap; }
+  thead th:first-child { border-radius: var(--radius) 0 0 0; }
+  tbody tr { border-bottom: 1px solid var(--cream); transition: background 0.1s; }
+  tbody tr:hover { background: #fbfcfe; }
+  tbody td { padding: 10px 14px; font-size: 0.84rem; vertical-align: middle; }
+  tbody tr.relance-due { background: #fff8ec; }
+
+  .status-pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; }
+  .s-Envoyée { background: #e8f5ef; color: var(--s-envoyee); }
+  .s-Relance { background: #fef5e0; color: #8a6000; }
+  .s-Entretien { background: #e0e8f5; color: var(--s-entretien); }
+  .s-Refus { background: #f5e0e0; color: var(--s-refus); }
+  .s-Attente { background: #f0eeea; color: var(--s-attente); }
+  .s-Offre { background: #e0f5e0; color: var(--s-offre); }
+
+  .table-actions { display: flex; gap: 5px; }
+  .tbl-btn { padding: 4px 9px; border: 1px solid var(--cream); background: var(--paper); border-radius: var(--radius); font-size: 0.72rem; cursor: pointer; transition: all 0.12s; }
+  .tbl-btn:hover { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+  .tbl-btn.danger:hover { background: #c0392b; border-color: #c0392b; }
+
+  .contrat-badge { font-size: 0.68rem; padding: 2px 7px; border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; background: var(--cream); color: var(--muted); }
+
+  /* RELANCE INDICATOR */
+  .relance-badge { font-size: 0.7rem; color: #c05000; font-weight: 600; }
+  .relance-ok { font-size: 0.7rem; color: #888; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10,22,40,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 520px; box-shadow: 0 8px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+  .modal h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--accent); margin-bottom: 18px; border-bottom: 1px solid var(--cream); padding-bottom: 10px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; border: 1px solid var(--cream); border-radius: var(--radius); padding: 8px 11px; font-family: 'DM Sans', sans-serif; font-size: 0.84rem; outline: none; background: var(--paper); }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent-2); background: var(--white); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+  /* RELANCE MODAL */
+  .relance-item { padding: 12px; background: var(--paper); border: 1px solid var(--cream); border-radius: var(--radius); margin-bottom: 10px; }
+  .relance-item h4 { font-size: 0.88rem; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .relance-item p { font-size: 0.78rem; color: var(--muted); }
+  .relance-item .overdue { color: #c0392b; font-weight: 600; }
+
+  /* EXPORT */
+  .export-section { background: var(--white); border: 1px solid var(--cream); border-radius: var(--radius); padding: 20px; margin-top: 24px; }
+  .export-section h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; color: var(--accent); margin-bottom: 14px; border-bottom: 1px solid var(--cream); padding-bottom: 8px; }
+  .export-steps { font-size: 0.82rem; color: var(--muted); line-height: 1.9; }
+  .export-steps strong { color: var(--ink); }
+  .export-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-state .big { font-size: 2.5rem; margin-bottom: 10px; }
+  .empty-state p { font-size: 0.86rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand" id="nav-brand">✦ <small>Tracker</small></div>
+  <a href="1-agent-candidature.html">✦ Agent CV</a>
+  <a href="2-tracker.html" class="active">📊 Tracker</a>
+  <a href="3-planning.html">⏱ Planning</a>
+  <a href="4-recherche.html">🔍 Recherche</a>
+  <div class="nav-end">
+    <button class="nav-settings-btn" onclick="window.location.href='1-agent-candidature.html'">⚙ Mon profil</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card highlight"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total envoyées</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-entretien">0</div><div class="stat-label">Entretiens</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-relance">0</div><div class="stat-label">Relances à faire</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-offre">0</div><div class="stat-label">Offres reçues</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-taux">0%</div><div class="stat-label">Taux réponse</div></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <input type="text" id="search-input" placeholder="🔍  Rechercher poste, entreprise..." oninput="renderTable()">
+    <select id="filter-statut" onchange="renderTable()">
+      <option value="">Tous les statuts</option>
+      <option>Envoyée</option><option>Attente</option><option>Relance</option>
+      <option>Entretien</option><option>Offre</option><option>Refus</option>
+    </select>
+    <select id="filter-contrat" onchange="renderTable()">
+      <option value="">Tous contrats</option>
+      <option>CDI</option><option>CDD</option><option>Freelance / Mission</option><option>Stage / Alternance</option>
+    </select>
+    <button class="btn btn-primary" onclick="openModal()">+ Ajouter</button>
+    <button class="btn btn-outline" onclick="openRelancesModal()">🔔 Relances</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Poste</th>
+          <th>Entreprise</th>
+          <th>Contrat</th>
+          <th>Date envoi</th>
+          <th>Statut</th>
+          <th>Relance prévue</th>
+          <th>Notes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div class="empty-state" id="empty-state" style="display:none;">
+      <div class="big">📭</div>
+      <p>Aucune candidature pour le moment.<br>Ajoute-en une ou génère un CV depuis l'Agent.</p>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="export-section">
+    <h3>📤 Export vers Google Sheets</h3>
+    <div class="export-steps">
+      <strong>Méthode simple (1 clic) :</strong> Exporte en CSV → importe dans Google Sheets.<br>
+      <strong>Méthode avancée :</strong> Exporte en JSON et utilise un script Apps Script pour import automatique.
+    </div>
+    <div class="export-btns">
+      <button class="btn btn-gold" onclick="exportCSV()">⬇ Exporter CSV</button>
+      <button class="btn btn-outline" onclick="exportJSON()">⬇ Exporter JSON</button>
+      <button class="btn btn-outline" onclick="copyAppsScript()">📋 Copier script Apps Script</button>
+      <button class="btn btn-outline" onclick="openSheetsGuide()">📖 Guide d'import</button>
+    </div>
+    <div id="script-copied" style="display:none; font-size:0.78rem; color:#2a7a4e; margin-top:8px;">✓ Script copié ! Ouvre Google Sheets → Extensions → Apps Script → colle et exécute.</div>
+  </div>
+
+</div>
+
+<!-- MODAL AJOUT / EDIT -->
+<div class="modal-overlay" id="modal-overlay" onclick="overlayClick(event, 'modal-overlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-title">Nouvelle candidature</h3>
+    <input type="hidden" id="edit-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Poste *</label>
+        <input type="text" id="f-poste" placeholder="ex. Chargé(e) Marketing">
+      </div>
+      <div class="form-group">
+        <label>Entreprise</label>
+        <input type="text" id="f-entreprise" placeholder="ex. Accor Hotels">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Type de contrat</label>
+        <select id="f-contrat">
+          <option>CDI</option><option>CDD</option><option>Freelance / Mission</option><option>Stage / Alternance</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Statut</label>
+        <select id="f-statut">
+          <option>Envoyée</option><option>Attente</option><option>Relance</option>
+          <option>Entretien</option><option>Offre</option><option>Refus</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date d'envoi</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="form-group">
+        <label>Relance prévue le</label>
+        <input type="date" id="f-relance">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Lien de l'offre</label>
+      <input type="text" id="f-url" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>Notes / Contacts / Suivi</label>
+      <textarea id="f-notes" rows="3" placeholder="Nom du RH, retour d'entretien, points clés..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RELANCES -->
+<div class="modal-overlay" id="relances-overlay" onclick="overlayClick(event, 'relances-overlay')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:560px;">
+    <h3>🔔 Relances à effectuer</h3>
+    <div id="relances-list"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeRelancesModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'candidatures';
+  const P_KEY = 'agent_profile';
+
+  function load() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  function save(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  function loadProfile() { try { return JSON.parse(localStorage.getItem(P_KEY)) || null; } catch { return null; } }
+
+  // Fermeture de modale en cliquant sur l'overlay (correctif du bug v1)
+  function overlayClick(event, overlayId) {
+    if (event.target.id === overlayId) {
+      document.getElementById(overlayId).classList.remove('open');
+    }
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function daysDiff(isoDate) {
+    if (!isoDate) return null;
+    const now = new Date(); now.setHours(0,0,0,0);
+    const d = new Date(isoDate);
+    return Math.floor((d - now) / 86400000);
+  }
+
+  function updateStats() {
+    const data = load();
+    document.getElementById('stat-total').textContent = data.length;
+    document.getElementById('stat-entretien').textContent = data.filter(c => c.statut === 'Entretien').length;
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('stat-relance').textContent = data.filter(c => c.relance && c.relance <= today && c.statut !== 'Refus' && c.statut !== 'Offre').length;
+    document.getElementById('stat-offre').textContent = data.filter(c => c.statut === 'Offre').length;
+    const answered = data.filter(c => ['Entretien','Offre','Refus'].includes(c.statut)).length;
+    document.getElementById('stat-taux').textContent = data.length ? Math.round(answered/data.length*100) + '%' : '0%';
+  }
+
+  function escapeHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function renderTable() {
+    const data = load();
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const filterStatut = document.getElementById('filter-statut').value;
+    const filterContrat = document.getElementById('filter-contrat').value;
+
+    const filtered = data.filter(c => {
+      const matchSearch = !search || c.poste?.toLowerCase().includes(search) || c.entreprise?.toLowerCase().includes(search);
+      const matchStatut = !filterStatut || c.statut === filterStatut;
+      const matchContrat = !filterContrat || c.contrat === filterContrat;
+      return matchSearch && matchStatut && matchContrat;
+    });
+
+    const tbody = document.getElementById('table-body');
+    document.getElementById('empty-state').style.display = filtered.length === 0 ? 'block' : 'none';
+
+    const today = new Date().toISOString().split('T')[0];
+    tbody.innerHTML = filtered.map(c => {
+      const isOverdue = c.relance && c.relance <= today && !['Refus','Offre'].includes(c.statut);
+      const relanceHtml = c.relance
+        ? `<span class="${isOverdue ? 'relance-badge' : 'relance-ok'}">${isOverdue ? '⚠ ' : ''}${formatDate(c.relance)}</span>`
+        : '<span style="color:#ccc">—</span>';
+
+      return `<tr class="${isOverdue ? 'relance-due' : ''}">
+        <td><strong>${escapeHtml(c.poste) || '—'}</strong></td>
+        <td>${escapeHtml(c.entreprise) || '—'}</td>
+        <td><span class="contrat-badge">${escapeHtml(c.contrat) || '—'}</span></td>
+        <td>${formatDate(c.date_envoi)}</td>
+        <td><span class="status-pill s-${c.statut || 'Attente'}" onclick="cycleStatus(${c.id})">${c.statut || 'Attente'}</span></td>
+        <td>${relanceHtml}</td>
+        <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(c.notes)}">${escapeHtml(c.notes) || '—'}</td>
+        <td>
+          <div class="table-actions">
+            <button class="tbl-btn" onclick="editEntry(${c.id})">✏</button>
+            ${c.url ? `<button class="tbl-btn" onclick="window.open('${escapeHtml(c.url)}', '_blank', 'noopener')">🔗</button>` : ''}
+            <button class="tbl-btn danger" onclick="deleteEntry(${c.id})">✕</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    updateStats();
+  }
+
+  const STATUTS = ['Envoyée','Attente','Relance','Entretien','Offre','Refus'];
+  function cycleStatus(id) {
+    const data = load();
+    const c = data.find(x => x.id === id);
+    if (!c) return;
+    const idx = STATUTS.indexOf(c.statut);
+    c.statut = STATUTS[(idx + 1) % STATUTS.length];
+    save(data);
+    renderTable();
+  }
+
+  function openModal(entry = null) {
+    document.getElementById('modal-title').textContent = entry ? 'Modifier la candidature' : 'Nouvelle candidature';
+    document.getElementById('edit-id').value = entry?.id || '';
+    document.getElementById('f-poste').value = entry?.poste || '';
+    document.getElementById('f-entreprise').value = entry?.entreprise || '';
+    document.getElementById('f-contrat').value = entry?.contrat || 'CDI';
+    document.getElementById('f-statut').value = entry?.statut || 'Envoyée';
+    document.getElementById('f-date').value = entry?.date_envoi || new Date().toISOString().split('T')[0];
+    document.getElementById('f-relance').value = entry?.relance || '';
+    document.getElementById('f-url').value = entry?.url || '';
+    document.getElementById('f-notes').value = entry?.notes || '';
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+  function saveEntry() {
+    const poste = document.getElementById('f-poste').value.trim();
+    if (!poste) { alert('Le poste est requis.'); return; }
+    const data = load();
+    const editId = document.getElementById('edit-id').value;
+    const entry = {
+      id: editId ? parseInt(editId) : Date.now(),
+      poste,
+      entreprise: document.getElementById('f-entreprise').value.trim(),
+      contrat: document.getElementById('f-contrat').value,
+      statut: document.getElementById('f-statut').value,
+      date_envoi: document.getElementById('f-date').value,
+      relance: document.getElementById('f-relance').value,
+      url: document.getElementById('f-url').value.trim(),
+      notes: document.getElementById('f-notes').value.trim()
+    };
+    if (editId) {
+      const idx = data.findIndex(x => x.id === parseInt(editId));
+      if (idx >= 0) data[idx] = entry;
+    } else {
+      data.push(entry);
+    }
+    save(data);
+    closeModal();
+    renderTable();
+  }
+
+  function editEntry(id) {
+    const c = load().find(x => x.id === id);
+    if (c) openModal(c);
+  }
+
+  function deleteEntry(id) {
+    if (!confirm('Supprimer cette candidature ?')) return;
+    save(load().filter(x => x.id !== id));
+    renderTable();
+  }
+
+  function openRelancesModal() {
+    const today = new Date().toISOString().split('T')[0];
+    const data = load();
+    const dues = data.filter(c => c.relance && c.relance <= today && !['Refus','Offre'].includes(c.statut))
+      .sort((a,b) => a.relance.localeCompare(b.relance));
+    const upcoming = data.filter(c => c.relance && c.relance > today && !['Refus','Offre'].includes(c.statut))
+      .sort((a,b) => a.relance.localeCompare(b.relance)).slice(0, 5);
+
+    let html = '';
+    if (dues.length === 0 && upcoming.length === 0) {
+      html = '<p style="color:var(--muted); text-align:center; padding:20px;">Aucune relance planifiée.</p>';
+    }
+    if (dues.length > 0) {
+      html += `<p style="font-size:0.75rem; font-weight:600; color:#c0392b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">⚠ À faire maintenant (${dues.length})</p>`;
+      html += dues.map(c => `<div class="relance-item">
+        <h4>${escapeHtml(c.poste)} — ${escapeHtml(c.entreprise) || '?'}</h4>
+        <p class="overdue">Relance prévue le ${formatDate(c.relance)} · Statut : ${c.statut}</p>
+        ${c.notes ? `<p style="margin-top:4px;">${escapeHtml(c.notes)}</p>` : ''}
+        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" style="font-size:0.72rem; padding:5px 10px;" onclick="markRelanceDone(${c.id})">✓ Relance faite</button>
+          <button class="btn btn-outline" style="font-size:0.72rem; padding:5px 10px;" onclick="editEntry(${c.id}); closeRelancesModal();">✏ Modifier</button>
+        </div>
+      </div>`).join('');
+    }
+    if (upcoming.length > 0) {
+      html += `<p style="font-size:0.75rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin: 16px 0 10px;">À venir</p>`;
+      html += upcoming.map(c => `<div class="relance-item">
+        <h4>${escapeHtml(c.poste)} — ${escapeHtml(c.entreprise) || '?'}</h4>
+        <p>Prévu le ${formatDate(c.relance)} · dans ${daysDiff(c.relance)} jour(s)</p>
+      </div>`).join('');
+    }
+    document.getElementById('relances-list').innerHTML = html;
+    document.getElementById('relances-overlay').classList.add('open');
+  }
+
+  function closeRelancesModal() { document.getElementById('relances-overlay').classList.remove('open'); }
+
+  function markRelanceDone(id) {
+    const data = load();
+    const c = data.find(x => x.id === id);
+    if (c) {
+      c.statut = 'Relance';
+      const next = new Date();
+      next.setDate(next.getDate() + 7);
+      c.relance = next.toISOString().split('T')[0];
+      c.notes = (c.notes ? c.notes + '\n' : '') + `Relance effectuée le ${new Date().toLocaleDateString('fr-FR')}`;
+      save(data);
+      renderTable();
+      openRelancesModal();
+    }
+  }
+
+  // ── EXPORT CSV ──
+  function getCandidateName() {
+    const p = loadProfile();
+    return ((p && p.name) ? p.name.replace(/\s+/g, '_') : 'Candidatures');
+  }
+
+  function exportCSV() {
+    const data = load();
+    if (data.length === 0) { alert('Aucune candidature à exporter.'); return; }
+    const headers = ['Poste','Entreprise','Contrat','Date envoi','Statut','Relance prévue','Lien offre','Notes'];
+    const rows = data.map(c => [
+      c.poste, c.entreprise, c.contrat, c.date_envoi, c.statut, c.relance, c.url, c.notes
+    ].map(v => `"${(v||'').replace(/"/g,'""')}"`));
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Candidatures_${getCandidateName()}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  }
+
+  function exportJSON() {
+    const data = load();
+    if (data.length === 0) { alert('Aucune candidature à exporter.'); return; }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Candidatures_${getCandidateName()}_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+  }
+
+  // ── APPS SCRIPT ──
+  function copyAppsScript() {
+    const script = `// Script Google Apps Script — Tracker Candidatures (COPILOT)
+// Colle ce code dans : Extensions > Apps Script > Nouveau script
+// Puis clique sur Exécuter > importFromJSON
+
+function importFromJSON() {
+  // Colle ici le contenu JSON exporté depuis ton tracker local
+  // (bouton "Exporter JSON" dans l'app)
+  const jsonData = ''; // <-- colle ici
+
+  if (!jsonData) {
+    SpreadsheetApp.getUi().alert('Colle ton JSON dans la variable jsonData du script.');
+    return;
+  }
+
+  const data = JSON.parse(jsonData);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+  // En-têtes
+  const headers = ['ID','Poste','Entreprise','Contrat','Date envoi','Statut','Relance prévue','Lien offre','Notes'];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length).setBackground('#0f2847').setFontColor('#ffffff').setFontWeight('bold');
+
+  // Données
+  const rows = data.map(c => [c.id, c.poste||'', c.entreprise||'', c.contrat||'', c.date_envoi||'', c.statut||'', c.relance||'', c.url||'', c.notes||'']);
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  }
+
+  // Format
+  sheet.autoResizeColumns(1, headers.length);
+  SpreadsheetApp.getUi().alert('✓ ' + rows.length + ' candidatures importées avec succès !');
+}`;
+
+    navigator.clipboard.writeText(script).then(() => {
+      document.getElementById('script-copied').style.display = 'block';
+      setTimeout(() => document.getElementById('script-copied').style.display = 'none', 6000);
+    });
+  }
+
+  function openSheetsGuide() {
+    alert('📖 Guide d\'import Google Sheets :\n\n1. Clique "Exporter CSV"\n2. Ouvre Google Sheets\n3. Fichier > Importer > Upload le fichier CSV\n4. Séparateur : virgule\n\nOU avec le script Apps Script :\n1. Clique "Exporter JSON" puis "Copier script Apps Script"\n2. Ouvre ton Google Sheet\n3. Extensions > Apps Script\n4. Colle le script, remplace la variable jsonData par le contenu copié\n5. Enregistrer puis Exécuter > importFromJSON\n\nLe script crée automatiquement les colonnes et la mise en forme !');
+  }
+
+  // ── INIT NAV BRAND ──
+  (function initNavBrand() {
+    const p = loadProfile();
+    if (p && p.name) {
+      const first = p.name.trim().split(/\s+/)[0] || '✦';
+      document.getElementById('nav-brand').innerHTML = `${first} <small>Tracker</small>`;
+    }
+  })();
+
+  // Init
+  renderTable();
+</script>
+</body>
+</html>
