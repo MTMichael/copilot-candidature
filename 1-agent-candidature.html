@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Candidature</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f0e0d; --paper: #f6f3ed; --cream: #eae5db;
+  --gold: #c4a24a; --gold-pale: #f5edcf; --muted: #7a7060;
+  --accent: #1e3d32; --white: #ffffff; --radius: 3px;
+  --danger: #9b2f2f; --success: #1a5c40;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); font-size: 14px; line-height: 1.6; }
+
+/* ── SETUP OVERLAY ── */
+#setup-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,14,13,0.85);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+#setup-overlay.hidden { display: none; }
+.setup-modal {
+  background: var(--white);
+  border-radius: 4px;
+  width: 100%; max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.3);
+}
+.setup-header {
+  background: var(--accent);
+  padding: 24px 28px 20px;
+  border-bottom: 3px solid var(--gold);
+}
+.setup-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; color: var(--paper); }
+.setup-header p { font-size: 0.8rem; color: rgba(246,243,237,0.6); margin-top: 4px; }
+.setup-body { padding: 24px 28px; }
+.setup-step {
+  display: none;
+}
+.setup-step.active { display: block; }
+.step-indicator {
+  display: flex; gap: 8px; margin-bottom: 22px;
+}
+.step-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--cream); transition: background 0.2s;
+}
+.step-dot.on { background: var(--gold); }
+.setup-nav { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--cream); }
+
+/* ── NAV ── */
+nav {
+  background: var(--accent); border-bottom: 2px solid var(--gold);
+  padding: 0 24px; display: flex; align-items: stretch;
+  position: sticky; top: 0; z-index: 50;
+}
+.nav-brand {
+  font-family: 'Cormorant Garamond', serif; color: var(--gold);
+  font-size: 1.4rem; padding: 11px 18px 11px 0;
+  border-right: 1px solid rgba(255,255,255,0.12); margin-right: 4px;
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+.nav-brand small { color: rgba(246,243,237,0.5); font-family:'DM Sans',sans-serif; font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; }
+nav a { color: rgba(246,243,237,0.6); text-decoration:none; padding:0 13px; font-size:0.77rem; font-weight:500; display:flex; align-items:center; gap:5px; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s; white-space:nowrap; }
+nav a:hover, nav a.active { color:var(--paper); border-bottom-color:var(--gold); }
+.nav-end { margin-left:auto; display:flex; align-items:center; }
+.nav-settings-btn { background:none; border:1px solid rgba(255,255,255,0.15); color:rgba(246,243,237,0.7); padding:5px 10px; border-radius:var(--radius); font-size:0.74rem; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.14s; }
+.nav-settings-btn:hover { border-color:var(--gold); color:var(--paper); }
+
+/* ── LAYOUT ── */
+.page { max-width: 1200px; margin: 0 auto; padding: 22px 18px 60px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+
+/* ── SHARED COMPONENTS ── */
+.card { background:var(--white); border:1px solid var(--cream); border-radius:var(--radius); padding:18px; box-shadow:0 1px 5px rgba(0,0,0,0.04); }
+.card+.card { margin-top:14px; }
+.card-head { font-family:'Cormorant Garamond',serif; font-size:0.97rem; font-weight:600; color:var(--accent); border-bottom:1px solid var(--cream); padding-bottom:8px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.pill { font-family:'DM Sans',sans-serif; font-size:0.58rem; font-weight:700; padding:2px 6px; border-radius:2px; letter-spacing:0.07em; text-transform:uppercase; }
+.pill-gold { background:var(--gold); color:var(--ink); }
+.pill-green { background:var(--accent); color:var(--paper); }
+.pill-blue { background:#1a3a6a; color:#fff; }
+
+label { display:block; font-size:0.68rem; font-weight:600; color:var(--muted); letter-spacing:0.07em; text-transform:uppercase; margin-bottom:4px; margin-top:11px; }
+label:first-of-type { margin-top:0; }
+textarea, input[type="text"], input[type="date"], select { width:100%; border:1px solid var(--cream); border-radius:var(--radius); padding:8px 10px; font-family:'DM Sans',sans-serif; font-size:0.83rem; color:var(--ink); background:var(--paper); outline:none; transition:border-color 0.18s; resize:vertical; }
+textarea:focus, input:focus, select:focus { border-color:var(--gold); background:var(--white); }
+textarea { min-height:80px; }
+
+.chip-row { display:flex; gap:5px; flex-wrap:wrap; margin-top:4px; }
+.chip { border:1px solid var(--cream); background:var(--paper); border-radius:2px; padding:5px 10px; font-size:0.75rem; cursor:pointer; color:var(--muted); font-weight:500; transition:all 0.13s; }
+.chip:hover { border-color:var(--gold); color:var(--ink); }
+.chip.on { background:var(--accent); color:var(--paper); border-color:var(--accent); }
+
+/* ── MODE CHIPS ── */
+.mode-bar { background:var(--white); border:1px solid var(--cream); border-radius:var(--radius); padding:14px 16px; margin-top:14px; }
+.mode-bar-label { font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+.mode-chips { display:flex; gap:7px; flex-wrap:wrap; }
+.mode-chip { border:1px solid var(--cream); background:var(--paper); border-radius:var(--radius); padding:8px 15px; font-size:0.8rem; font-weight:500; cursor:pointer; color:var(--muted); transition:all 0.14s; display:flex; align-items:center; gap:6px; user-select:none; }
+.mode-chip:hover { border-color:var(--gold); color:var(--ink); }
+.mode-chip.on { background:var(--accent); color:var(--paper); border-color:var(--accent); font-weight:600; }
+
+/* ── SCORE ── */
+#score-section { display:none; margin-bottom:18px; }
+#score-section.visible { display:block; }
+.score-card { background:var(--accent); color:var(--paper); border-radius:var(--radius); padding:18px 22px; display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:center; }
+.score-dial { width:84px; height:84px; border-radius:50%; border:4px solid rgba(255,255,255,0.12); display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; transition:background 0.8s ease; }
+.score-num { font-family:'Cormorant Garamond',serif; font-size:1.85rem; line-height:1; color:var(--gold); font-weight:600; }
+.score-pct { font-size:0.58rem; opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
+.score-right h3 { font-family:'Cormorant Garamond',serif; font-size:1.1rem; margin-bottom:5px; }
+.score-verdict { font-size:0.78rem; opacity:.85; line-height:1.5; margin-bottom:8px; }
+.kw-tags { display:flex; flex-wrap:wrap; gap:4px; }
+.kw-tag { font-size:0.66rem; padding:2px 7px; border-radius:2px; font-weight:600; }
+.kw-match { background:rgba(196,162,74,.25); color:var(--gold); border:1px solid rgba(196,162,74,.3); }
+.kw-miss { background:rgba(255,255,255,.06); color:rgba(246,243,237,.4); border:1px solid rgba(255,255,255,.1); text-decoration:line-through; }
+.score-rec { font-size:0.74rem; background:rgba(255,255,255,.06); border-radius:var(--radius); padding:7px 11px; border-left:2px solid var(--gold); margin-top:8px; }
+
+/* ── ANALYZE BTN ── */
+.analyze-btn { width:100%; background:var(--gold-pale); color:var(--accent); border:1px solid var(--gold); border-radius:var(--radius); padding:9px 14px; font-family:'DM Sans',sans-serif; font-size:0.81rem; font-weight:600; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:10px; }
+.analyze-btn:hover { background:var(--gold); }
+
+/* ── GEN BTN ── */
+.gen-btn { width:100%; background:var(--accent); color:var(--paper); border:none; border-radius:var(--radius); padding:13px 18px; font-family:'Cormorant Garamond',serif; font-size:1.03rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px; transition:background 0.16s; margin-top:14px; }
+.gen-btn:hover { background:#152c24; }
+.gen-btn:disabled { background:var(--muted); cursor:not-allowed; }
+.spinner { width:14px; height:14px; border:2px solid rgba(255,255,255,.25); border-top-color:var(--paper); border-radius:50%; animation:spin .7s linear infinite; display:none; }
+.spinner.on { display:block; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.status-pulse { display:none; align-items:center; gap:8px; padding:8px 12px; background:var(--cream); border-radius:var(--radius); margin-top:9px; font-size:0.77rem; color:var(--muted); }
+.status-pulse.on { display:flex; }
+.gen-error{display:none;margin-top:12px;padding:14px 16px;background:#fdf3f0;border:1px solid #e6b8a8;border-left:3px solid #c0492e;border-radius:var(--radius);font-size:0.82rem;color:#5a2318;line-height:1.6;}
+.gen-error .err-title{font-weight:700;color:#a5331c;margin-bottom:8px;font-size:0.9rem;}
+.gen-error ol{margin:6px 0 8px 18px;} .gen-error li{margin-bottom:4px;} .gen-error code{background:#f2ddd6;padding:1px 5px;border-radius:3px;font-size:.78rem;}
+.apikey-box{margin-top:12px;border:1px solid var(--cream);border-radius:var(--radius);overflow:hidden;}
+.apikey-head{padding:10px 14px;background:var(--cream);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--accent);}
+.apikey-body{display:none;padding:12px 14px;} .apikey-body.open{display:block;}
+.apikey-body input{width:100%;padding:9px 11px;border:1px solid var(--cream);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.85rem;box-sizing:border-box;}
+.dot { width:6px; height:6px; border-radius:50%; background:var(--gold); animation:pulse 1s ease infinite; flex-shrink:0; }
+@keyframes pulse { 0%,100%{opacity:.25} 50%{opacity:1} }
+
+/* ── RESULTS ── */
+#results { display:none; margin-top:24px; }
+#results.on { display:block; }
+.tabs { display:flex; border-bottom:2px solid var(--cream); flex-wrap:wrap; }
+.tab { padding:8px 18px; background:none; border:none; font-family:'DM Sans',sans-serif; font-size:0.79rem; font-weight:500; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.13s; }
+.tab.on { color:var(--accent); border-bottom-color:var(--gold); font-weight:600; }
+.tab-body { display:none; background:var(--white); border:1px solid var(--cream); border-top:none; padding:22px; }
+.tab-body.on { display:block; }
+.result-text { font-size:0.84rem; line-height:1.9; white-space:pre-wrap; }
+.result-actions { display:flex; gap:7px; margin-top:13px; padding-top:12px; border-top:1px solid var(--cream); flex-wrap:wrap; }
+.act-btn { padding:6px 13px; border:1px solid var(--cream); background:var(--paper); border-radius:var(--radius); font-size:0.74rem; font-weight:600; cursor:pointer; color:var(--ink); font-family:'DM Sans',sans-serif; transition:all 0.13s; }
+.act-btn:hover { background:var(--accent); color:var(--paper); border-color:var(--accent); }
+.act-btn.gold { background:var(--gold); border-color:var(--gold); }
+
+/* ── KW ── */
+.kw-inline { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+.kw-found { background:#e8f5ee; color:var(--success); border:1px solid #b6e0c9; font-size:0.68rem; padding:2px 7px; border-radius:2px; font-weight:600; }
+.kw-miss2 { background:#fef0f0; color:var(--danger); border:1px solid #f0c0c0; font-size:0.68rem; padding:2px 7px; border-radius:2px; font-weight:600; }
+
+/* ── LIVE KW ── */
+#kw-live { display:none; margin-top:10px; }
+
+/* ── LM STRUCTURE ── */
+.lm-para { border-left:2px solid var(--cream); padding:6px 11px; margin-bottom:6px; font-size:0.76rem; color:var(--muted); }
+.lm-para strong { color:var(--ink); display:block; font-size:0.74rem; margin-bottom:2px; }
+.lm-para.hi { border-left-color:var(--gold); background:#fdf9ef; }
+
+/* ── COLOR PICKER ── */
+.cp-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+.cp { width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:transform 0.13s; }
+.cp:hover { transform:scale(1.18); }
+.cp.sel { border-color:var(--ink); }
+
+/* ── PHOTO ── */
+.photo-area { display:flex; gap:10px; margin-top:5px; }
+.photo-prev { width:54px; height:54px; border-radius:50%; border:2px solid var(--cream); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; background:var(--paper); }
+.photo-prev img { width:100%; height:100%; object-fit:cover; }
+.photo-ctrls { display:flex; flex-direction:column; gap:4px; flex:1; }
+.ph-tabs { display:flex; gap:4px; }
+.ph-tab { flex:1; padding:5px; border:1px solid var(--cream); background:var(--paper); border-radius:var(--radius); font-size:0.7rem; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--muted); text-align:center; transition:all 0.13s; }
+.ph-tab.on { background:var(--accent); color:var(--paper); border-color:var(--accent); }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:20px; right:20px; background:var(--accent); color:var(--paper); padding:10px 15px; border-radius:var(--radius); font-size:0.8rem; font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,0.2); transform:translateY(50px); opacity:0; transition:all 0.3s; z-index:400; border-left:3px solid var(--gold); max-width:260px; }
+.toast.show { transform:translateY(0); opacity:1; }
+
+/* ── SETUP BTN ── */
+.setup-btn { background:var(--accent); color:var(--paper); border:none; border-radius:var(--radius); padding:9px 18px; font-family:'DM Sans',sans-serif; font-size:0.84rem; font-weight:600; cursor:pointer; transition:background 0.15s; }
+.setup-btn:hover { background:#152c24; }
+.setup-btn.outline { background:transparent; border:1px solid var(--cream); color:var(--ink); }
+.setup-btn.outline:hover { border-color:var(--accent); color:var(--accent); }
+.setup-btn.gold { background:var(--gold); color:var(--ink); }
+
+.tip { font-size:0.71rem; color:var(--muted); font-style:italic; margin-top:4px; }
+.sec-title { font-family:'Cormorant Garamond',serif; font-size:1.25rem; color:var(--accent); text-align:center; margin:24px 0 4px; }
+.sec-line { width:34px; height:2px; background:var(--gold); margin:0 auto 18px; }
+
+/* ── PROFILE BANNER ── */
+.profile-banner { background:linear-gradient(135deg, var(--accent) 0%, #152c24 100%); color:var(--paper); border-radius:var(--radius); padding:14px 18px; margin-bottom:18px; display:flex; align-items:center; gap:14px; }
+.profile-avatar { width:44px; height:44px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--ink); flex-shrink:0; overflow:hidden; }
+.profile-avatar img { width:100%; height:100%; object-fit:cover; }
+.profile-name { font-family:'Cormorant Garamond',serif; font-size:1.05rem; }
+.profile-sub { font-size:0.72rem; opacity:0.65; margin-top:2px; }
+.profile-edit-btn { margin-left:auto; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:var(--paper); padding:5px 11px; border-radius:var(--radius); font-size:0.72rem; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.13s; }
+.profile-edit-btn:hover { background:rgba(255,255,255,0.18); }
+.mob-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.mob-chip { background:var(--accent); color:var(--paper); border-radius:20px; padding:4px 10px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px; }
+.mob-chip button { background:none; border:none; color:var(--paper); cursor:pointer; font-size:0.95rem; line-height:1; padding:0; opacity:0.7; }
+.mob-chip button:hover { opacity:1; }
+.mob-suggest { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.mob-suggest button { background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.12); border-radius:20px; padding:3px 9px; font-size:0.72rem; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--ink); transition:all 0.12s; }
+.mob-suggest button:hover { background:var(--gold); border-color:var(--gold); }
+.mob-toggle { display:flex; align-items:center; gap:8px; font-size:0.8rem; margin-top:8px; cursor:pointer; color:var(--ink); }
+.mob-toggle input { width:auto; margin:0; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SETUP WIZARD (premier lancement)
+═══════════════════════════════════════ -->
+<div id="setup-overlay">
+  <div class="setup-modal">
+    <div class="setup-header">
+      <h2>Bienvenue dans ton Agent Candidature</h2>
+      <p>Configure ton profil en 3 étapes — tu pourras le modifier à tout moment.</p>
+    </div>
+    <div class="setup-body">
+      <div class="step-indicator" id="step-dots">
+        <div class="step-dot on"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+      </div>
+
+      <!-- ÉTAPE 1 : Identité -->
+      <div class="setup-step active" id="step-1">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--accent);margin-bottom:14px;">Qui es-tu ?</h3>
+        <label>Prénom & Nom *</label>
+        <input type="text" id="s-name" placeholder="ex. Sophie Martin">
+        <label>Ville de résidence</label>
+        <input type="text" id="s-location" placeholder="ex. Lyon (69)">
+        <label style="margin-top:10px;">Mobilité géographique — villes / pays où tu es prêt·e à travailler</label>
+        <div class="mob-chips" id="mob-chips"></div>
+        <input type="text" id="s-mobility-input" placeholder="Tape une ville ou un pays puis Entrée…" onkeydown="mobKey(event)">
+        <div class="mob-suggest" id="mob-suggest"></div>
+        <label class="mob-toggle"><input type="checkbox" id="s-mobility-show" checked> Mentionner ma mobilité sur le CV (visible par les recruteurs)</label>
+        <label>Disponibilité & contrats recherchés</label>
+        <input type="text" id="s-dispo" placeholder="ex. Disponible janvier 2025 · CDI / CDD">
+        <label>Email de contact</label>
+        <input type="text" id="s-email" placeholder="ex. sophie.martin@gmail.com">
+        <label>Photo (URL optionnelle)</label>
+        <input type="text" id="s-photo" placeholder="https://... (photo LinkedIn ou autre)">
+      </div>
+
+      <!-- ÉTAPE 2 : Parcours -->
+      <div class="setup-step" id="step-2">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--accent);margin-bottom:14px;">Ton parcours</h3>
+        <label>Formation (diplôme, école, spécialité)</label>
+        <textarea id="s-education" rows="3" placeholder="ex. Master Marketing — Université Lyon 2&#10;Spécialisation communication digitale"></textarea>
+        <label>Expériences professionnelles (libre, 1 poste par ligne)</label>
+        <textarea id="s-experience" rows="7" placeholder="ex. Chargée de communication — Mairie de Lyon (2 ans)&#10;- Gestion réseaux sociaux (15k followers)&#10;- Organisation d'événements (500+ participants)&#10;&#10;Assistante marketing — Startup Foodtech (1 an)&#10;- Campagnes emailing, SEO, contenus web"></textarea>
+        <label>Compétences clés (séparées par des points)</label>
+        <textarea id="s-skills" rows="3" placeholder="ex. Réseaux sociaux · Canva · WordPress · SEO · Événementiel · Pack Office · Google Analytics"></textarea>
+        <label>Langues</label>
+        <input type="text" id="s-languages" placeholder="ex. Français (natif) · Anglais (B2) · Espagnol (notions)">
+      </div>
+
+      <!-- ÉTAPE 3 : Recherche -->
+      <div class="setup-step" id="step-3">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--accent);margin-bottom:14px;">Ce que tu cherches</h3>
+        <label>Métiers visés (séparés par virgules)</label>
+        <input type="text" id="s-metiers" placeholder="ex. Chargée de communication, Community Manager, Chef de projet digital">
+        <label>Secteurs préférés (optionnel)</label>
+        <input type="text" id="s-sectors" placeholder="ex. Culture, ESS, Collectivités, Startups">
+        <label>Structure de lettre de motivation souhaitée</label>
+        <textarea id="s-lm-structure" rows="5" placeholder="ex. §1 — Accroche sur l'entreprise et le rôle&#10;§2 — Ce que j'apporte concrètement (exemples chiffrés)&#10;§3 — Ma conviction / angle différenciateur&#10;§4 — Disponibilité et formule de politesse">§1 — Accroche sur l'entreprise et le rôle : pourquoi cette structure, pourquoi ce poste maintenant
+§2 — Ce que j'apporte concrètement : expériences réelles avec exemples précis, pas de liste de compétences
+§3 — Ma conviction personnelle ou angle différenciateur — quelque chose de vrai, pas générique
+§4 — Disponibilité, formule de politesse, signature</textarea>
+        <p class="tip">Tu peux personnaliser cette structure selon tes préférences — elle sera transmise à l'IA à chaque génération.</p>
+      </div>
+
+      <div class="setup-nav">
+        <button class="setup-btn outline" id="setup-back" onclick="setupNav(-1)" style="display:none;">← Retour</button>
+        <button class="setup-btn" id="setup-next" onclick="setupNav(1)">Suivant →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP PRINCIPALE
+═══════════════════════════════════════ -->
+<nav>
+  <div class="nav-brand" id="nav-brand">✦ <small>Agent Candidature</small></div>
+  <a href="1-agent-candidature.html" class="active">✦ Agent CV</a>
+  <a href="2-tracker.html">📊 Tracker</a>
+  <a href="3-planning.html">⏱ Planning</a>
+  <a href="4-recherche.html">🔍 Recherche</a>
+  <a href="5-match.html">🎯 Match</a>
+  <div class="nav-end">
+    <button class="nav-settings-btn" onclick="openSetup()">⚙ Mon profil</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Bandeau profil -->
+  <div class="profile-banner" id="profile-banner">
+    <div class="profile-avatar" id="banner-avatar">?</div>
+    <div>
+      <div class="profile-name" id="banner-name">Profil non configuré</div>
+      <div class="profile-sub" id="banner-sub">Lance la configuration pour personnaliser ton agent</div>
+    </div>
+    <button class="profile-edit-btn" onclick="openSetup()">✏ Modifier</button>
+  </div>
+
+  <!-- SCORE -->
+  <div id="score-section">
+    <div class="score-card">
+      <div class="score-dial" id="score-dial">
+        <div class="score-num" id="score-num">—</div>
+        <div class="score-pct">/ 100</div>
+      </div>
+      <div class="score-right">
+        <h3 id="score-title">Score de matching</h3>
+        <div class="score-verdict" id="score-verdict"></div>
+        <div class="kw-tags" id="kw-cloud"></div>
+        <div class="score-rec" id="score-rec"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols">
+
+    <!-- ═══ GAUCHE ═══ -->
+    <div>
+      <div class="card">
+        <div class="card-head">Offre d'emploi <span class="pill pill-gold">optionnel</span></div>
+        <label>Intitulé du poste & entreprise</label>
+        <input type="text" id="job-title" placeholder="ex. Chargée de communication — Mairie de Bordeaux">
+        <label>Texte complet de l'offre</label>
+        <textarea id="job-offer" rows="11" placeholder="Colle ici le descriptif du poste (missions, profil recherché...).&#10;&#10;Également possible : laisse ce champ VIDE pour générer un CV général / candidature spontanée." oninput="liveKw()"></textarea>
+        <button class="analyze-btn" onclick="analyzeScore()">
+          <span id="analyze-spin" class="spinner"></span>
+          🎯 Analyser le matching avant de rédiger
+        </button>
+        <div id="kw-live">
+          <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;">Mots-clés de l'offre détectés</div>
+          <div class="kw-inline" id="kw-live-chips"></div>
+          <p class="tip">Ces mots-clés seront intégrés naturellement dans tes documents.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Instructions <span class="pill pill-gold">Étape 2</span></div>
+
+        <label>Type de contrat</label>
+        <div class="chip-row" id="contract-chips">
+          <div class="chip on" data-v="CDI">CDI</div>
+          <div class="chip" data-v="CDD">CDD</div>
+          <div class="chip" data-v="Freelance / Mission">Freelance</div>
+          <div class="chip" data-v="Stage">Stage</div>
+          <div class="chip" data-v="Alternance">Alternance</div>
+        </div>
+
+        <label>Ton de la lettre</label>
+        <div class="chip-row" id="tone-chips">
+          <div class="chip on" data-tone="Professionnel et engagé">Professionnel & engagé</div>
+          <div class="chip" data-tone="Chaleureux et humain">Chaleureux & humain</div>
+          <div class="chip" data-tone="Ambitieux et direct">Ambitieux & direct</div>
+          <div class="chip" data-tone="Sobre et précis">Sobre & précis</div>
+        </div>
+
+        <label>Points à mettre en avant</label>
+        <textarea id="focus-points" rows="2" placeholder="ex. Insister sur mon expérience événementielle, ma maîtrise des réseaux..."></textarea>
+
+        <label>Ce qu'il faut éviter</label>
+        <textarea id="avoid-points" rows="2" placeholder="ex. Minimiser le poste de caissière, ne pas mentionner la mission courte..."></textarea>
+
+        <label>Format CV</label>
+        <input type="text" id="cv-format" placeholder="ex. 1 page, chronologique inversé (laisser vide = agent décide)">
+      </div>
+
+      <div class="card">
+        <div class="card-head">Structure de la lettre <span class="pill pill-blue">Personnalisée</span></div>
+        <div id="lm-structure-display"></div>
+        <p class="tip" style="margin-top:8px;">Modifiable dans ⚙ Mon profil.</p>
+      </div>
+    </div>
+
+    <!-- ═══ DROITE ═══ -->
+    <div>
+      <div class="card">
+        <div class="card-head">Mon profil <span class="pill pill-green">Auto</span></div>
+        <label>Identité & disponibilité</label>
+        <textarea id="profile-identity" rows="4" placeholder="Sera rempli depuis ton profil configuré..."></textarea>
+        <label>Formation</label>
+        <textarea id="profile-education" rows="2"></textarea>
+        <label>Expériences</label>
+        <textarea id="profile-experience" rows="9"></textarea>
+        <label>Compétences</label>
+        <textarea id="profile-skills" rows="4"></textarea>
+        <label>Langues</label>
+        <input type="text" id="profile-languages">
+        <label>Mobilité (villes / pays où travailler)</label>
+        <input type="text" id="profile-mobility" placeholder="ex. Paris, Lyon, Bruxelles, Remote">
+        <label class="mob-toggle"><input type="checkbox" id="profile-mobility-show" checked> Mentionner ma mobilité sur le CV</label>
+        <p class="tip" style="margin-top:6px;">Champs pré-remplis depuis ton profil. Modifie-les ou ajoute des éléments, puis enregistre pour les conserver.</p>
+        <button class="act-btn gold" style="width:100%;margin-top:9px;" onclick="saveInlineProfile()">💾 Enregistrer ces ajouts dans mon profil</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Apparence du CV</div>
+        <label>Couleur principale</label>
+        <div class="cp-row">
+          <div class="cp sel" style="background:#1e3d32" data-c="#1e3d32"></div>
+          <div class="cp" style="background:#1a3659" data-c="#1a3659"></div>
+          <div class="cp" style="background:#2c2c2c" data-c="#2c2c2c"></div>
+          <div class="cp" style="background:#7a1a1a" data-c="#7a1a1a"></div>
+          <div class="cp" style="background:#4a2a6a" data-c="#4a2a6a"></div>
+          <div class="cp" style="background:#1a4a6a" data-c="#1a4a6a"></div>
+          <div class="cp" style="background:#5a3010" data-c="#5a3010"></div>
+          <div class="cp" style="background:#2a5a1a" data-c="#2a5a1a"></div>
+          <input type="color" id="custom-color" value="#1e3d32" style="width:24px;height:24px;border:none;border-radius:50%;cursor:pointer;padding:0;">
+        </div>
+        <label>Photo</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--muted);text-transform:none;letter-spacing:0;cursor:pointer;margin-top:5px;">
+          <input type="checkbox" id="no-photo"> Sans photo
+        </label>
+        <div id="photo-section" style="margin-top:8px;">
+          <div class="photo-area">
+            <div class="photo-prev" id="photo-prev">👤</div>
+            <div class="photo-ctrls">
+              <div class="ph-tabs">
+                <button class="ph-tab on" onclick="setPhTab('file')">📁 PC</button>
+                <button class="ph-tab" onclick="setPhTab('url')">🔗 URL</button>
+              </div>
+              <div id="ph-file">
+                <input type="file" id="photo-file" accept="image/*" style="display:none" onchange="handleFile(this)">
+                <button class="act-btn" style="width:100%;margin-top:4px;" onclick="document.getElementById('photo-file').click()">Choisir...</button>
+              </div>
+              <div id="ph-url" style="display:none;">
+                <input type="text" id="photo-url" placeholder="https://..." oninput="handleUrl(this.value)" style="margin-top:4px;">
+              </div>
+              <button id="rm-photo" style="display:none;" class="act-btn" onclick="clearPhoto()">✕ Retirer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE + GÉNÉRATION -->
+  <div class="mode-bar">
+    <div class="mode-bar-label">Que veux-tu générer ?</div>
+    <div class="mode-chips">
+      <div class="mode-chip on" data-mode="both" onclick="setMode('both')">✦ CV + Lettre de motivation</div>
+      <div class="mode-chip" data-mode="cv" onclick="setMode('cv')">📄 CV uniquement</div>
+      <div class="mode-chip" data-mode="lm" onclick="setMode('lm')">✉ Lettre uniquement</div>
+    </div>
+  </div>
+  <button class="gen-btn" id="gen-btn" onclick="generate()">
+    <div class="spinner" id="gen-spin"></div>
+    <span id="gen-label">✦ Générer CV + Lettre de motivation</span>
+  </button>
+  <div class="status-pulse" id="status-pulse">
+    <div class="dot"></div>
+    <span id="status-text">Analyse en cours...</span>
+  </div>
+
+  <div id="gen-error" class="gen-error"></div>
+
+  <div class="apikey-box">
+    <div class="apikey-head" onclick="document.getElementById('apikey-body').classList.toggle('open')">🔑 Clé API — pour générer en local (optionnel, cliquer pour ouvrir)</div>
+    <div class="apikey-body" id="apikey-body">
+      <p class="tip">Cette application utilise l'IA d'Anthropic. Ouverte en local (double-clic), elle a besoin de <strong>ta</strong> clé API pour générer. Elle reste stockée sur ton ordinateur et n'est envoyée qu'à l'API Anthropic.</p>
+      <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off">
+      <button class="act-btn gold" style="margin-top:8px;" onclick="saveApiKey()">Enregistrer la clé</button>
+      <p class="tip" style="margin-top:6px;">Obtiens une clé sur console.anthropic.com → API Keys.</p>
+    </div>
+  </div>
+
+  <!-- RÉSULTATS -->
+  <div id="results">
+    <div class="sec-title">Documents générés</div>
+    <div class="sec-line"></div>
+    <div class="tabs">
+      <button class="tab on" onclick="showTab('cv')">CV adapté</button>
+      <button class="tab" onclick="showTab('lm')">Lettre de motivation</button>
+      <button class="tab" onclick="showTab('kw')">Mots-clés</button>
+      <button class="tab" onclick="showTab('tips')">Conseils</button>
+    </div>
+    <div class="tab-body on" id="tab-cv">
+      <div class="result-text" id="cv-result"></div>
+      <div class="result-actions">
+        <button class="act-btn gold" onclick="cp('cv')">📋 Copier</button>
+        <button class="act-btn" onclick="dl('cv','CV')">⬇ .txt</button>
+        <button class="act-btn" onclick="saveTracker()">📊 Tracker</button>
+      </div>
+    </div>
+    <div class="tab-body" id="tab-lm">
+      <div class="result-text" id="lm-result"></div>
+      <div class="result-actions">
+        <button class="act-btn gold" onclick="cp('lm')">📋 Copier</button>
+        <button class="act-btn" onclick="dl('lm','Lettre')">⬇ .txt</button>
+      </div>
+    </div>
+    <div class="tab-body" id="tab-kw"><div id="kw-report"></div></div>
+    <div class="tab-body" id="tab-tips">
+      <div class="result-text" id="tips-result"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════
+// PROFILE STORAGE
+// ══════════════════════════
+const P_KEY = 'agent_profile';
+
+function saveProfile(p) { localStorage.setItem(P_KEY, JSON.stringify(p)); }
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem(P_KEY)) || null; }
+  catch { return null; }
+}
+
+// ══════════════════════════
+// SETUP WIZARD
+// ══════════════════════════
+let currentStep = 1;
+const TOTAL_STEPS = 3;
+
+function setupNav(dir) {
+  const next = currentStep + dir;
+  if (next < 1 || next > TOTAL_STEPS) return;
+
+  // Validate step 1
+  if (dir > 0 && currentStep === 1) {
+    if (!document.getElementById('s-name').value.trim()) {
+      showToast('Entre au moins ton prénom et nom.');
+      return;
+    }
+  }
+
+  // Last step: save & close
+  if (dir > 0 && currentStep === TOTAL_STEPS) {
+    commitSetup();
+    return;
+  }
+
+  document.getElementById('step-' + currentStep).classList.remove('active');
+  currentStep = next;
+  document.getElementById('step-' + currentStep).classList.add('active');
+
+  // Update dots
+  document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i < currentStep));
+
+  document.getElementById('setup-back').style.display = currentStep > 1 ? 'block' : 'none';
+  document.getElementById('setup-next').textContent = currentStep === TOTAL_STEPS ? '✓ Terminer' : 'Suivant →';
+}
+
+let mobList = [];
+const MOB_SUGGEST = ['Paris','Lyon','Marseille','Bordeaux','Toulouse','Lille','Nantes','Strasbourg','Rennes','Île-de-France','Télétravail / Remote','France entière','International'];
+function mobEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function renderMobChips(){
+  const box = document.getElementById('mob-chips');
+  if(!box) return;
+  box.innerHTML = mobList.map((c,i) => '<span class="mob-chip">' + mobEsc(c) + ' <button type="button" onclick="mobRemove(' + i + ')" aria-label="Retirer">\u00d7</button></span>').join('');
+  const sug = document.getElementById('mob-suggest');
+  sug.innerHTML = MOB_SUGGEST.filter(c => !mobList.includes(c)).map(c => '<button type="button" onclick="mobAdd(\'' + c + '\')">+ ' + c + '</button>').join('');
+}
+function mobAdd(v){ v = (v||'').trim(); if(v && !mobList.includes(v)){ mobList.push(v); renderMobChips(); } }
+function mobRemove(i){ mobList.splice(i,1); renderMobChips(); }
+function mobKey(e){ if(e.key==='Enter' || e.key===','){ e.preventDefault(); const el=document.getElementById('s-mobility-input'); mobAdd(el.value); el.value=''; } }
+
+function saveInlineProfile(){
+  const p = loadProfile() || {};
+  p.education  = document.getElementById('profile-education').value.trim();
+  p.experience = document.getElementById('profile-experience').value.trim();
+  p.skills     = document.getElementById('profile-skills').value.trim();
+  p.languages  = document.getElementById('profile-languages').value.trim();
+  p.mobility   = document.getElementById('profile-mobility').value.trim();
+  p.mobilityShow = document.getElementById('profile-mobility-show').checked;
+  const idLines = document.getElementById('profile-identity').value.split('\n').map(x => x.trim()).filter(Boolean);
+  if (idLines[0]) p.name = idLines[0];
+  saveProfile(p);
+  applyProfile(p);
+  showToast('\u2713 Profil mis \u00e0 jour et enregistr\u00e9 !');
+}
+
+function commitSetup() {
+  const p = {
+    name: document.getElementById('s-name').value.trim(),
+    location: document.getElementById('s-location').value.trim(),
+    dispo: document.getElementById('s-dispo').value.trim(),
+    email: document.getElementById('s-email').value.trim(),
+    photo: document.getElementById('s-photo').value.trim(),
+    education: document.getElementById('s-education').value.trim(),
+    experience: document.getElementById('s-experience').value.trim(),
+    skills: document.getElementById('s-skills').value.trim(),
+    languages: document.getElementById('s-languages').value.trim(),
+    metiers: document.getElementById('s-metiers').value.trim(),
+    sectors: document.getElementById('s-sectors').value.trim(),
+    lmStructure: document.getElementById('s-lm-structure').value.trim(),
+    mobility: mobList.join(', '),
+    mobilityShow: document.getElementById('s-mobility-show').checked,
+  };
+  saveProfile(p);
+  document.getElementById('setup-overlay').classList.add('hidden');
+  applyProfile(p);
+  showToast('✓ Profil enregistré !');
+}
+
+function openSetup() {
+  const p = loadProfile();
+  if (p) {
+    document.getElementById('s-name').value = p.name || '';
+    document.getElementById('s-location').value = p.location || '';
+    document.getElementById('s-dispo').value = p.dispo || '';
+    document.getElementById('s-email').value = p.email || '';
+    document.getElementById('s-photo').value = p.photo || '';
+    document.getElementById('s-education').value = p.education || '';
+    document.getElementById('s-experience').value = p.experience || '';
+    document.getElementById('s-skills').value = p.skills || '';
+    document.getElementById('s-languages').value = p.languages || '';
+    document.getElementById('s-metiers').value = p.metiers || '';
+    document.getElementById('s-sectors').value = p.sectors || '';
+    document.getElementById('s-lm-structure').value = p.lmStructure || '';
+  }
+  mobList = (p && p.mobility) ? p.mobility.split(',').map(x => x.trim()).filter(Boolean) : [];
+  document.getElementById('s-mobility-show').checked = !p || p.mobilityShow !== false;
+  renderMobChips();
+  currentStep = 1;
+  document.querySelectorAll('.setup-step').forEach((s,i) => s.classList.toggle('active', i===0));
+  document.querySelectorAll('.step-dot').forEach((d,i) => d.classList.toggle('on', i===0));
+  document.getElementById('setup-back').style.display = 'none';
+  document.getElementById('setup-next').textContent = 'Suivant →';
+  document.getElementById('setup-overlay').classList.remove('hidden');
+}
+
+function applyProfile(p) {
+  if (!p) return;
+
+  // Banner
+  const initials = p.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  const avatar = document.getElementById('banner-avatar');
+  if (p.photo && p.photo.startsWith('http')) {
+    avatar.innerHTML = `<img src="${p.photo}" alt="">`;
+  } else {
+    avatar.textContent = initials || '?';
+  }
+  document.getElementById('banner-name').textContent = p.name || 'Profil non configuré';
+  const mobStr = (p.mobilityShow !== false && p.mobility) ? ('Mobile : ' + p.mobility) : '';
+  document.getElementById('banner-sub').textContent = [p.location, p.dispo, mobStr].filter(Boolean).join(' · ') || '';
+
+  // Nav brand
+  const firstName = p.name.split(' ')[0];
+  document.getElementById('nav-brand').innerHTML = `${firstName} <small>Agent Candidature</small>`;
+
+  // Profile fields
+  const identity = [p.name, p.location, p.dispo, p.email].filter(Boolean).join('\n');
+  document.getElementById('profile-identity').value = identity;
+  document.getElementById('profile-education').value = p.education || '';
+  document.getElementById('profile-experience').value = p.experience || '';
+  document.getElementById('profile-skills').value = p.skills || '';
+  document.getElementById('profile-languages').value = p.languages || '';
+  document.getElementById('profile-mobility').value = p.mobility || '';
+  document.getElementById('profile-mobility-show').checked = p.mobilityShow !== false;
+
+  // LM structure display
+  const struct = p.lmStructure || '';
+  document.getElementById('lm-structure-display').innerHTML = struct.split('\n').filter(Boolean).map((line, i) => `
+    <div class="lm-para ${i===0?'hi':''}">
+      <strong>${line.split('—')[0]?.trim() || ('§'+(i+1))}</strong>
+      ${line.split('—').slice(1).join('—').trim() || ''}
+    </div>
+  `).join('');
+
+  // Photo setup from profile URL
+  if (p.photo && p.photo.startsWith('http')) {
+    photoData = p.photo;
+    document.getElementById('photo-prev').innerHTML = `<img src="${p.photo}" alt="">`;
+    document.getElementById('rm-photo').style.display = 'block';
+    document.getElementById('photo-url').value = p.photo;
+  }
+}
+
+// ══════════════════════════
+// PHOTO
+// ══════════════════════════
+let photoData = null;
+let cvColor = '#1e3d32';
+
+document.getElementById('no-photo').addEventListener('change', e => {
+  document.getElementById('photo-section').style.opacity = e.target.checked ? '0.3' : '1';
+  document.getElementById('photo-section').style.pointerEvents = e.target.checked ? 'none' : '';
+  if (e.target.checked) { photoData = null; resetPrev(); }
+});
+function setPhTab(t) {
+  document.getElementById('ph-file').style.display = t==='file'?'block':'none';
+  document.getElementById('ph-url').style.display = t==='url'?'block':'none';
+  document.querySelectorAll('.ph-tab').forEach((b,i)=>b.classList.toggle('on',(t==='file'&&i===0)||(t==='url'&&i===1)));
+}
+function handleFile(input) {
+  if (!input.files[0]) return;
+  const r = new FileReader();
+  r.onload = e => { photoData = e.target.result; showPrev(photoData); };
+  r.readAsDataURL(input.files[0]);
+}
+function handleUrl(u) { if (u.startsWith('http')) { photoData = u; showPrev(u); } }
+function showPrev(src) { document.getElementById('photo-prev').innerHTML = `<img src="${src}" alt="">`; document.getElementById('rm-photo').style.display = 'block'; }
+function resetPrev() { document.getElementById('photo-prev').innerHTML = '👤'; document.getElementById('rm-photo').style.display = 'none'; }
+function clearPhoto() { photoData = null; resetPrev(); document.getElementById('photo-file').value = ''; document.getElementById('photo-url').value = ''; }
+
+// Color picker
+document.querySelectorAll('.cp').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('.cp').forEach(x => x.classList.remove('sel'));
+  c.classList.add('sel'); cvColor = c.dataset.c;
+  document.getElementById('custom-color').value = cvColor;
+}));
+document.getElementById('custom-color').addEventListener('input', e => {
+  document.querySelectorAll('.cp').forEach(x=>x.classList.remove('sel'));
+  cvColor = e.target.value;
+});
+
+// ══════════════════════════
+// CHIPS
+// ══════════════════════════
+document.querySelectorAll('#tone-chips .chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('#tone-chips .chip').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+}));
+document.querySelectorAll('#contract-chips .chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('#contract-chips .chip').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+}));
+
+// ══════════════════════════
+// MODE SELECTOR
+// ══════════════════════════
+let genMode = 'both';
+function setMode(m) {
+  genMode = m;
+  document.querySelectorAll('.mode-chip').forEach(c=>c.classList.toggle('on', c.dataset.mode===m));
+  const L = { both:'✦ Générer CV + Lettre de motivation', cv:'📄 Générer le CV uniquement', lm:'✉ Générer la Lettre uniquement' };
+  document.getElementById('gen-label').textContent = L[m];
+}
+
+// ══════════════════════════
+// LIVE KEYWORDS
+// ══════════════════════════
+const BASE_KW = ['seo','google ads','meta ads','facebook ads','analytics','hubspot','brevo','mailchimp','crm',
+  'emailing','sms','data studio','kpi','canva','figma','photoshop','indesign','premiere','after effects',
+  'wordpress','html','css','javascript','python','mysql','sql','trello','notion','jira','slack','scrum',
+  'agile','kanban','management','chef de projet','marketing','communication','stratégie','rédaction',
+  'content','social media','réseaux sociaux','linkedin','tiktok','instagram','événementiel','b2b','b2c',
+  'lead','conversion','copywriting','brand','branding','identité visuelle','gestion de projet','reporting',
+  'budget','excel','powerpoint','pack office','photographie','vidéo','montage','after effects','illustrator',
+  'sketch','ux','ui','design','maquette','prototype','accessibilité','rgpd','legal','juridique','comptabilité',
+  'paie','recrutement','formation','coaching','audit','conseil','stratégie','business plan','finance',
+  'comptable','contrôle de gestion','logistique','supply chain','achat','vente','négociation','retail',
+  'relation client','service client','support','hotline','santé','médical','infirmier','aide soignant',
+  'éducation','enseignement','animation','social','travail social','éducateur','ingénierie','mécanique',
+  'électronique','informatique','développement','front-end','back-end','fullstack','devops','cloud','aws'];
+
+function liveKw() {
+  const text = document.getElementById('job-offer').value.toLowerCase();
+  if (text.length < 60) { document.getElementById('kw-live').style.display = 'none'; return; }
+  const p = loadProfile();
+  const userKw = p ? p.skills.toLowerCase().split(/[·,\n]/).map(s=>s.trim()).filter(Boolean) : [];
+  const allKw = [...new Set([...BASE_KW, ...userKw])];
+  const found = allKw.filter(k => text.includes(k));
+  if (!found.length) { document.getElementById('kw-live').style.display = 'none'; return; }
+  document.getElementById('kw-live').style.display = 'block';
+  document.getElementById('kw-live-chips').innerHTML = found.slice(0,20).map(k=>`<span class="kw-found">✓ ${k}</span>`).join('');
+}
+
+// ══════════════════════════
+// SCORE ANALYSIS
+// ══════════════════════════
+async function analyzeScore() {
+  const offer = document.getElementById('job-offer').value.trim();
+  if (offer.length < 60) { showToast('Colle d\'abord le texte de l\'offre.'); return; }
+  document.getElementById('analyze-spin').classList.add('on');
+  const profile = document.getElementById('profile-skills').value + '\n' + document.getElementById('profile-experience').value;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:apiHeaders(),
+      body: JSON.stringify({
+        model:'claude-sonnet-5', max_tokens:700,
+        system:`Expert recrutement. Analyse matching offre/profil. Retourne UNIQUEMENT ce JSON :
+{"score":75,"verdict":"Bon matching","mots_cles_presents":["mot1"],"mots_cles_manquants":["mot2"],"recommandation":"Conseil concret."}`,
+        messages:[{role:'user', content:`OFFRE:\n${offer}\n\nPROFIL:\n${profile}`}]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.map(b=>b.text||'').join('');
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch { parsed = {score:55,verdict:'Analyse partielle',mots_cles_presents:[],mots_cles_manquants:[],recommandation:'Lance la génération pour voir les détails.'}; }
+    renderScore(parsed);
+  } catch(e) { handleGenError(e); }
+  finally { document.getElementById('analyze-spin').classList.remove('on'); }
+}
+
+function renderScore(data) {
+  const s = data.score||0;
+  document.getElementById('score-section').classList.add('visible');
+  document.getElementById('score-num').textContent = s;
+  const deg = Math.round(s/100*360);
+  const col = s>=75?'#c4a24a':s>=50?'#e09a2a':'#c0392b';
+  document.getElementById('score-dial').style.background = `conic-gradient(${col} ${deg}deg, rgba(255,255,255,0.1) ${deg}deg)`;
+  document.getElementById('score-num').style.color = col;
+  document.getElementById('score-title').textContent = s>=80?'✦ Excellent matching !':s>=65?'✓ Bon matching':s>=45?'△ Matching moyen':'⚠ Matching faible';
+  document.getElementById('score-verdict').textContent = data.verdict||'';
+  document.getElementById('score-rec').textContent = data.recommandation||'';
+  const cloud = document.getElementById('kw-cloud');
+  cloud.innerHTML = [
+    ...(data.mots_cles_presents||[]).map(k=>`<span class="kw-tag kw-match">✓ ${k}</span>`),
+    ...(data.mots_cles_manquants||[]).map(k=>`<span class="kw-tag kw-miss">${k}</span>`)
+  ].join('');
+  const _ss=document.getElementById('score-section'); if(_ss.scrollIntoView) _ss.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ══════════════════════════
+// GENERATE
+// ══════════════════════════
+// ══════════════════════════
+// API & GESTION D'ERREUR
+// ══════════════════════════
+function apiHeaders(){
+  const h={'Content-Type':'application/json'};
+  const k=(localStorage.getItem('anthropic_api_key')||'').trim();
+  if(k){ h['x-api-key']=k; h['anthropic-version']='2023-06-01'; h['anthropic-dangerous-direct-browser-access']='true'; }
+  return h;
+}
+function hasApiKey(){ return !!(localStorage.getItem('anthropic_api_key')||'').trim(); }
+function saveApiKey(){
+  const el=document.getElementById('api-key-input'); const v=(el.value||'').trim();
+  if(v){ localStorage.setItem('anthropic_api_key', v); showToast('\u2713 Cl\u00e9 API enregistr\u00e9e'); }
+  else { localStorage.removeItem('anthropic_api_key'); showToast('Cl\u00e9 API supprim\u00e9e'); }
+  hideGenError();
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function showGenError(title, bodyHtml){
+  const box=document.getElementById('gen-error');
+  box.style.display='block';
+  box.innerHTML='<div class="err-title">\u26a0 '+title+'</div>'+bodyHtml;
+  if(box.scrollIntoView) box.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function hideGenError(){ const b=document.getElementById('gen-error'); if(b){ b.style.display='none'; b.innerHTML=''; } }
+function handleGenError(e){
+  let kind = e && e.kind;
+  if(!kind){ const m=((e&&e.message)||'')+''; if((e&&e.name==='TypeError')||/fetch|network|failed to fetch/i.test(m)) kind='network'; }
+  if(kind==='network'){
+    showGenError('Connexion au service impossible (\u00ab Failed to fetch \u00bb)',
+      '<p>Le navigateur n\'a pas pu contacter le service de g\u00e9n\u00e9ration.</p>'
+      +'<p><strong>Causes les plus fr\u00e9quentes :</strong></p><ol>'
+      +'<li><strong>Pas de connexion Internet</strong> \u2014 v\u00e9rifie ta connexion.</li>'
+      +'<li><strong>Fichier ouvert en local</strong> (adresse <code>file://</code>, double-clic) <strong>sans cl\u00e9 API</strong> : l\'appel \u00e0 l\'IA est alors bloqu\u00e9. C\'est la cause la plus probable.</li>'
+      +'</ol><p><strong>Solution :</strong> ouvre la section <strong>\ud83d\udd11 Cl\u00e9 API</strong> ci-dessous et colle ta cl\u00e9 Anthropic \u2014 le CV sera alors g\u00e9n\u00e9r\u00e9 directement. '
+      +(hasApiKey()?'Une cl\u00e9 est d\u00e9j\u00e0 enregistr\u00e9e : v\u00e9rifie qu\'elle est valide et que tu as du cr\u00e9dit.':'Aucune cl\u00e9 n\'est enregistr\u00e9e pour l\'instant.')+'</p>'
+      +'<p style="font-size:.76rem;opacity:.85;">En attendant, tu peux remplir ton profil et utiliser les onglets <strong>Recherche</strong> et <strong>Match</strong> (liens directs).</p>');
+    return;
+  }
+  if(kind==='http'){
+    const st=e.status; let t='Erreur du service (HTTP '+st+')', b='';
+    if(st===401||st===403){ t='Authentification refus\u00e9e (HTTP '+st+')'; b='<p>La cl\u00e9 API est manquante, invalide ou expir\u00e9e.</p><p>V\u00e9rifie ta cl\u00e9 dans la section \ud83d\udd11 ci-dessous (elle commence par <code>sk-ant-</code>).</p>'; }
+    else if(st===429){ t='Trop de requ\u00eates (HTTP 429)'; b='<p>Limite de requ\u00eates atteinte, ou cr\u00e9dit API \u00e9puis\u00e9. Attends une minute puis r\u00e9essaie, ou v\u00e9rifie ton cr\u00e9dit sur console.anthropic.com.</p>'; }
+    else if(st>=500){ t='Service momentan\u00e9ment indisponible (HTTP '+st+')'; b='<p>Le probl\u00e8me vient du serveur. R\u00e9essaie dans quelques instants.</p>'; }
+    else { b='<p>'+(e.detail?esc(e.detail):'R\u00e9ponse inattendue du service.')+'</p>'; }
+    showGenError(t,b); return;
+  }
+  if(kind==='api'){ showGenError('Le service a renvoy\u00e9 une erreur','<p>'+esc(e.detail||'')+'</p><p>Si le message mentionne la cl\u00e9 ou le cr\u00e9dit, v\u00e9rifie la section \ud83d\udd11 ci-dessous.</p>'); return; }
+  showGenError('Une erreur inattendue est survenue','<p>'+esc((e&&(e.message||e.detail))||'Erreur inconnue')+'</p>');
+}
+
+async function generate() {
+  hideGenError();
+  const offer = document.getElementById('job-offer').value.trim();
+  const hasOffer = offer.length >= 40;
+  const p = loadProfile();
+  if (!p || !((p.name||'').trim()) || !(((p.experience||'')+(p.skills||'')).trim())) {
+    showGenError('Profil incomplet', '<p>Pour g\u00e9n\u00e9rer un CV, ton profil doit contenir au minimum ton <strong>nom</strong> et tes <strong>exp\u00e9riences</strong> ou <strong>comp\u00e9tences</strong>.</p><p>Clique sur <strong>\u2699 Mon profil</strong> (en haut) pour le compl\u00e9ter, puis relance la g\u00e9n\u00e9ration.</p>');
+    return;
+  }
+  const tone = document.querySelector('#tone-chips .chip.on')?.dataset.tone||'Professionnel et engagé';
+  const contract = document.querySelector('#contract-chips .chip.on')?.dataset.v||'CDI';
+  const noPhoto = document.getElementById('no-photo').checked;
+  const lmStructure = p?.lmStructure || '§1 Accroche\n§2 Valeur ajoutée\n§3 Différenciateur\n§4 Politesse';
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  document.getElementById('gen-spin').classList.add('on');
+  document.getElementById('status-pulse').classList.add('on');
+
+  const msgs = genMode==='cv'
+    ? ['Analyse de l\'offre...','Sélection des expériences...','Rédaction du CV...']
+    : genMode==='lm'
+    ? ['Analyse de l\'offre...','Rédaction de l\'accroche...','Rédaction de la lettre...']
+    : ['Analyse des mots-clés...','Rédaction du CV...','Rédaction de la lettre...','Finalisation...'];
+  let mi=0;
+  const iv = setInterval(()=>{ mi=(mi+1)%msgs.length; document.getElementById('status-text').textContent=msgs[mi]; }, 2800);
+
+  const jobTitle = document.getElementById('job-title').value.trim();
+  const offerBlock = hasOffer
+    ? `## OFFRE\nPoste : ${jobTitle||'Non précisé'}\nContrat : ${contract}\n---\n${offer}`
+    : `## OFFRE\nAucune offre fournie — génère une candidature GÉNÉRALE (candidature spontanée) adaptée aux métiers visés par le candidat.\nPoste visé : ${jobTitle || ((p&&p.metiers||'').split(',')[0].trim()) || 'Selon le profil du candidat'}\nContrat : ${contract}`;
+  const noOfferNote = hasOffer ? '' : `\nSans offre précise : optimise le CV pour les métiers et secteurs visés par le candidat. Pour "mots_cles_integres", liste les compétences-clés attendues sur ces métiers ; "mots_cles_manquants" = compétences à renforcer.`;
+  const SYS = `Tu es un agent de candidature personnel expert. Tu génères des documents de candidature professionnels, percutants et parfaitement adaptés à chaque offre d'emploi.
+
+RÈGLE MOTS-CLÉS : Intègre naturellement dans les documents générés les mots-clés exacts de l'offre. Ne les liste pas — fais-les vivre dans des phrases concrètes.
+
+STRUCTURE LETTRE DE MOTIVATION — respecter impérativement :
+${lmStructure}
+
+Retourne UNIQUEMENT ce JSON valide sans markdown :
+{"cv":"...","lettre":"...","mots_cles_integres":["mot1"],"mots_cles_manquants":["mot2"],"conseils":"..."}`;
+
+  const PROMPT = `${offerBlock}
+
+## PROFIL DU CANDIDAT
+${document.getElementById('profile-identity').value}
+Formation : ${document.getElementById('profile-education').value}
+Expériences : ${document.getElementById('profile-experience').value}
+Compétences : ${document.getElementById('profile-skills').value}
+Langues : ${document.getElementById('profile-languages').value}
+${(document.getElementById('profile-mobility-show').checked && document.getElementById('profile-mobility').value.trim()) ? 'Mobilit\u00e9 g\u00e9ographique : ' + document.getElementById('profile-mobility').value.trim() : ''}
+
+## INSTRUCTIONS${noOfferNote}
+Ton : ${tone}
+${document.getElementById('focus-points').value?'Mettre en avant : '+document.getElementById('focus-points').value:''}
+${document.getElementById('avoid-points').value?'Éviter : '+document.getElementById('avoid-points').value:''}
+Format CV : ${document.getElementById('cv-format').value||'1 page, chronologique inversé'}
+Photo : ${noPhoto?'Non':photoData?'Oui, emplacement haut droit':'Selon usage du secteur'}
+Couleur CV : ${cvColor}
+${(document.getElementById('profile-mobility-show').checked && document.getElementById('profile-mobility').value.trim()) ? 'Mobilit\u00e9 : afficher clairement la mobilit\u00e9 g\u00e9ographique du candidat dans l\'en-t\u00eate ou le bloc contact du CV (villes/pays indiqu\u00e9s), pour que les recruteurs la voient ; ne pas inventer au-del\u00e0 de cette liste.' : 'Mobilit\u00e9 : NE PAS mentionner de villes ou pays de mobilit\u00e9 sur le CV ni dans la lettre.'}
+
+## TÂCHES
+${genMode!=='lm'?'1. CV — Structuré, mots-clés intégrés, expériences sélectionnées selon pertinence.':'1. cv — Retourne "".'}
+${genMode!=='cv'?'2. LETTRE — Strictement selon la structure fournie. Ton : '+tone+'.':'2. lettre — Retourne "".'}
+3. mots_cles_integres — mots-clés de l'offre placés dans les documents.
+4. mots_cles_manquants — mots-clés importants non couverts par le profil.
+5. conseils — 5 points : 2 forces, 2 axes d'amélioration, 1 question d'entretien probable + piste de réponse.
+
+JSON uniquement.`;
+
+  try {
+    let res;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST', headers:apiHeaders(),
+        body: JSON.stringify({model:'claude-sonnet-5',max_tokens:4000,system:SYS,messages:[{role:'user',content:PROMPT}]})
+      });
+    } catch(netErr) { throw {kind:'network', detail:(netErr&&netErr.message)||''}; }
+    if (!res.ok) {
+      let msg=''; try { const j=await res.json(); msg=(j.error&&j.error.message)||''; } catch(_){}
+      throw {kind:'http', status:res.status, detail:msg};
+    }
+    const data = await res.json();
+    clearInterval(iv);
+    if (data.error) throw {kind:'api', detail:data.error.message};
+    const raw = data.content?.map(b=>b.text||'').join('')||'';
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch { parsed = {cv:raw,lettre:'(Voir CV)',mots_cles_integres:[],mots_cles_manquants:[],conseils:'Erreur parsing.'}; }
+
+    document.getElementById('cv-result').textContent = parsed.cv||'';
+    document.getElementById('lm-result').textContent = parsed.lettre||'';
+    document.getElementById('tips-result').textContent = parsed.conseils||'';
+
+    // Tab visibility
+    document.querySelectorAll('.tab').forEach((t,i)=>{
+      const n=['cv','lm','kw','tips'][i];
+      t.style.display = ((n==='cv'&&genMode==='lm')||(n==='lm'&&genMode==='cv')) ? 'none' : '';
+    });
+    showTab(genMode==='lm'?'lm':'cv');
+
+    // KW report
+    const integres = parsed.mots_cles_integres||[];
+    const manquants = parsed.mots_cles_manquants||[];
+    document.getElementById('kw-report').innerHTML = `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">✓ Mots-clés intégrés (${integres.length})</div>
+        <div class="kw-inline">${integres.map(k=>`<span class="kw-found">${k}</span>`).join('')||'<span style="color:var(--muted);font-size:.8rem;">Aucun</span>'}</div>
+      </div>
+      <div>
+        <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">△ Non couverts (${manquants.length})</div>
+        <div class="kw-inline">${manquants.map(k=>`<span class="kw-miss2">${k}</span>`).join('')||'<span style="color:#1a5c40;font-size:.8rem;font-weight:600;">✓ Tout est couvert !</span>'}</div>
+      </div>
+      <div style="margin-top:14px;padding:10px 12px;background:#f0f5f2;border-radius:var(--radius);font-size:0.78rem;color:var(--muted);line-height:1.7;">
+        <strong style="color:var(--accent);">💡 Conseil ATS</strong> — Les filtres automatiques des recruteurs scannent les mots-clés exacts de l'offre. Un taux de couverture élevé améliore significativement tes chances d'être lu.
+      </div>`;
+
+    document.getElementById('results').classList.add('on');
+    const _r=document.getElementById('results'); if(_r.scrollIntoView) _r.scrollIntoView({behavior:'smooth'});
+
+  } catch(e) { clearInterval(iv); handleGenError(e); }
+  finally {
+    btn.disabled=false;
+    document.getElementById('gen-spin').classList.remove('on');
+    const RL={both:'✦ Régénérer',cv:'📄 Régénérer le CV',lm:'✉ Régénérer la lettre'};
+    document.getElementById('gen-label').textContent=RL[genMode];
+    document.getElementById('status-pulse').classList.remove('on');
+  }
+}
+
+// ══════════════════════════
+// UTILS
+// ══════════════════════════
+function showTab(n) {
+  const names=['cv','lm','kw','tips'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('on',names[i]===n));
+  document.querySelectorAll('.tab-body').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+n).classList.add('on');
+}
+function cp(t) {
+  const ids={cv:'cv-result',lm:'lm-result',tips:'tips-result'};
+  navigator.clipboard.writeText(document.getElementById(ids[t]).textContent).then(()=>showToast('Copié !'));
+}
+function dl(t,label) {
+  const blob=new Blob([document.getElementById(t===`cv`?'cv-result':'lm-result').textContent],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  const p=loadProfile(); const name=(p?.name||'Candidat').replace(/ /g,'_');
+  a.download=`${name}_${label}.txt`; a.click();
+}
+function saveTracker() {
+  const title=document.getElementById('job-title').value.trim()||'Candidature sans titre';
+  const parts=title.split('—');
+  const existing=JSON.parse(localStorage.getItem('candidatures')||'[]');
+  existing.push({
+    id:Date.now(), poste:parts[0]?.trim()||title, entreprise:parts[1]?.trim()||'',
+    contrat:document.querySelector('#contract-chips .chip.on')?.dataset.v||'CDI',
+    date_envoi:new Date().toISOString().split('T')[0], statut:'Envoyée', relance:'', notes:'', url:''
+  });
+  localStorage.setItem('candidatures', JSON.stringify(existing));
+  showToast('✓ Ajouté au tracker !');
+}
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ══════════════════════════
+// INIT
+// ══════════════════════════
+// ══════════════════════════
+// PROFIL PAR DÉFAUT — Emmanuelle Guei
+// (pré-remplit l'app au 1er lancement ; entièrement modifiable via ⚙ Mon profil)
+// ══════════════════════════
+const DEFAULT_PROFILE = {
+  name: "Emmanuelle Guei",
+  location: "Paris (75010)",
+  dispo: "Disponible · Alternance / CDD / CDI / Stage / Intérim",
+  email: "gueiemmanuelle2@gmail.com · 06 64 86 50 27",
+  photo: "",
+  mobility: "Paris, Île-de-France, Evreux (27)",
+  mobilityShow: true,
+  education: `Institut de Formation de l'Avenir et de l'Emploi (IFAE) — CQP Agent d'accueil (2023).
+Lycée Professionnel Abbé Grégoire — Baccalauréat Gestion Administration (2021) : Gestion Administration, Économie-Droit, PSE.`,
+  experience: `Assistante de direction (alternance) — Simply-Up Immobilier, Paris (déc. 2025 – mars 2026)
+- Comptabilité, séances photo, rédaction de mandats
+
+Équipière polyvalente — McDonald's, Paris (mai – déc. 2024)
+- Préparation des commandes, service à table, encaissement
+
+Garde d'enfants — La Bambinerie, Paris (sept. 2021 – oct. 2024)
+- Aide aux devoirs, préparation des repas, sortie d'école
+
+Assistante RH stagiaire — ONELA, Antony (mai – juin 2019)
+- Accueil des intervenants, prise d'appels, réalisation de plannings, pointage des arrivées`,
+  skills: `Capacité d'adaptation · Travail d'équipe · Autonomie · Sens de la communication · Polyvalence · Gestion administrative · Comptabilité · Rédaction de mandats · Accueil / relation client · Ximi · Excel · Word · PowerPoint`,
+  languages: "Français (natif) · Anglais (notions)",
+  metiers: "Assistante de direction, Assistante administrative, Assistante RH, Agent d'accueil, Gestion administration, Secrétaire",
+  sectors: "Immobilier, Services, Ressources humaines, Administration",
+  lmStructure: `§1 — Accroche sur l'entreprise et le poste : pourquoi ce secteur et ce rôle maintenant
+§2 — Ce que j'apporte concrètement : polyvalence, gestion administrative, sérieux et adaptation — avec des exemples réels, pas une liste de compétences
+§3 — Ma motivation personnelle : envie d'apprendre et de m'investir durablement
+§4 — Disponibilité, formule de politesse, signature`,
+};
+
+(function init() {
+  let p = loadProfile();
+  if (!p) {                 // 1er lancement : profil GUEI pré-chargé
+    p = DEFAULT_PROFILE;
+    saveProfile(p);
+  }
+  document.getElementById('setup-overlay').classList.add('hidden');
+  applyProfile(p);
+  renderMobChips();
+  const ak=(localStorage.getItem('anthropic_api_key')||''); if(ak){ const el=document.getElementById('api-key-input'); if(el) el.value=ak; }
+  if(location.hash==='#profil'){ openSetup(); }
+})();
+</script>
+</body>
+</html>

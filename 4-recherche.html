@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recherche Emploi</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0f0e0d; --paper:#f6f3ed; --cream:#eae5db; --gold:#c4a24a; --gold-pale:#f5edcf;
+  --muted:#7a7060; --accent:#1e3d32; --white:#ffffff; --radius:3px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;}
+nav{background:var(--accent);border-bottom:2px solid var(--gold);padding:0 24px;display:flex;align-items:stretch;position:sticky;top:0;z-index:50;}
+.nav-brand{font-family:'Cormorant Garamond',serif;color:var(--gold);font-size:1.4rem;padding:11px 18px 11px 0;border-right:1px solid rgba(255,255,255,0.12);margin-right:4px;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.nav-brand small{color:rgba(246,243,237,0.5);font-family:'DM Sans',sans-serif;font-size:0.65rem;letter-spacing:.1em;text-transform:uppercase;}
+nav a{color:rgba(246,243,237,0.6);text-decoration:none;padding:0 13px;font-size:.77rem;font-weight:500;display:flex;align-items:center;gap:5px;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;}
+nav a:hover,nav a.active{color:var(--paper);border-bottom-color:var(--gold);}
+
+.page{max-width:1100px;margin:0 auto;padding:26px 18px 60px;}
+.page-head{margin-bottom:22px;}
+.page-head h1{font-family:'Cormorant Garamond',serif;font-size:1.7rem;color:var(--accent);}
+.page-head p{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.cols{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start;}
+@media(max-width:780px){.cols{grid-template-columns:1fr;}}
+
+.card{background:var(--white);border:1px solid var(--cream);border-radius:var(--radius);padding:18px;box-shadow:0 1px 5px rgba(0,0,0,.04);}
+.card+.card{margin-top:14px;}
+.card-head{font-family:'Cormorant Garamond',serif;font-size:.95rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--cream);padding-bottom:8px;margin-bottom:12px;}
+
+label{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;margin-top:11px;}
+label:first-of-type{margin-top:0;}
+input[type="text"]{width:100%;border:1px solid var(--cream);border-radius:var(--radius);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:.83rem;color:var(--ink);background:var(--paper);outline:none;transition:border-color .18s;}
+input:focus{border-color:var(--gold);background:var(--white);}
+
+.chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.chip{border:1px solid var(--cream);background:var(--paper);border-radius:2px;padding:5px 10px;font-size:.75rem;cursor:pointer;color:var(--muted);font-weight:500;transition:all .13s;}
+.chip:hover{border-color:var(--gold);color:var(--ink);}
+.chip.on{background:var(--accent);color:var(--paper);border-color:var(--accent);}
+
+.gen-btn{background:var(--accent);color:var(--paper);border:none;border-radius:var(--radius);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:6px;}
+.gen-btn:hover{background:#152c24;}
+.outline-btn{background:var(--paper);color:var(--ink);border:1px solid var(--cream);border-radius:var(--radius);padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .13s;}
+.outline-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── QUERY PREVIEW ── */
+.query-box{background:var(--accent);color:var(--paper);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:none;}
+.query-box.vis{display:block;}
+.query-box h4{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--gold);margin-bottom:7px;}
+.q-tag{display:inline-block;background:rgba(196,162,74,.2);border:1px solid rgba(196,162,74,.3);color:var(--gold);padding:2px 7px;border-radius:2px;font-size:.67rem;font-weight:600;margin:2px 3px 2px 0;}
+
+/* ── SECTION SEP ── */
+.sep{font-family:'Cormorant Garamond',serif;font-size:.88rem;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:10px;}
+.sep::after{content:'';flex:1;height:1px;background:var(--cream);}
+
+/* ── PLATFORM CARDS ── */
+.pf-grid{display:grid;gap:8px;}
+.pf-card{border:1px solid var(--cream);border-radius:var(--radius);background:var(--paper);overflow:hidden;transition:all .15s;}
+.pf-card:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.pf-head{padding:10px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;}
+.pf-logo{font-size:1.2rem;width:28px;text-align:center;flex-shrink:0;}
+.pf-info{flex:1;}
+.pf-name{font-weight:700;font-size:.84rem;display:flex;align-items:center;gap:6px;}
+.pf-desc{font-size:.68rem;color:var(--muted);margin-top:1px;}
+.badge{font-size:.58rem;padding:2px 6px;border-radius:2px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.b-hot{background:#fde8e8;color:#9b2f2f;}
+.b-good{background:#e8f5ee;color:#1a5c40;}
+.b-niche{background:#e8ecf5;color:#1a3659;}
+.b-int{background:#f5f0e8;color:#7a5010;}
+.b-remote{background:#f0e8f5;color:#4a1a6a;}
+.b-freelance{background:#fff0e0;color:#8a4000;}
+
+.pf-links{display:none;padding:0 13px 11px;flex-direction:column;gap:5px;border-top:1px solid var(--cream);}
+.pf-card.open .pf-links{display:flex;padding-top:9px;}
+.pf-link{display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--white);border:1px solid var(--cream);border-radius:var(--radius);text-decoration:none;color:var(--ink);font-size:.77rem;font-weight:500;transition:all .13s;}
+.pf-link:hover{border-color:var(--accent);background:var(--accent);color:var(--paper);}
+.pf-link .lk-sub{font-size:.66rem;color:var(--muted);margin-left:auto;}
+.pf-link:hover .lk-sub{color:rgba(246,243,237,.6);}
+.pf-arrow{color:var(--muted);font-size:.8rem;margin-left:auto;}
+
+/* ── PRESET SHORTCUTS ── */
+.preset-btn{display:block;width:100%;padding:8px 11px;border:1px solid var(--cream);background:var(--paper);border-radius:var(--radius);font-size:.78rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted);text-align:left;transition:all .13s;margin-bottom:5px;}
+.preset-btn:hover{border-color:var(--gold);color:var(--ink);background:var(--white);}
+
+.tip-box{background:var(--gold-pale);border:1px solid rgba(196,162,74,.3);border-radius:var(--radius);padding:11px 13px;font-size:.76rem;line-height:1.6;color:var(--ink);margin-top:12px;}
+.tip-box strong{color:var(--accent);}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--accent);color:var(--paper);padding:9px 14px;border-radius:var(--radius);font-size:.79rem;box-shadow:0 4px 16px rgba(0,0,0,.2);transform:translateY(50px);opacity:0;transition:all .3s;z-index:400;border-left:3px solid var(--gold);}
+.toast.show{transform:translateY(0);opacity:1;}
+.nav-end{margin-left:auto;display:flex;align-items:center;}
+.nav-settings-btn{background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(246,243,237,0.7);padding:5px 10px;border-radius:3px;font-size:0.74rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.14s;text-decoration:none;display:inline-flex;align-items:center;white-space:nowrap;}
+.nav-settings-btn:hover{border-color:var(--gold);color:var(--paper);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand" id="nav-brand">✦ <small>Agent Candidature</small></div>
+  <a href="1-agent-candidature.html">✦ Agent CV</a>
+  <a href="2-tracker.html">📊 Tracker</a>
+  <a href="3-planning.html">⏱ Planning</a>
+  <a href="4-recherche.html" class="active">🔍 Recherche</a>
+  <a href="5-match.html">🎯 Match</a>
+  <div class="nav-end">
+    <a class="nav-settings-btn" href="1-agent-candidature.html#profil">⚙ Mon profil</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-head">
+    <h1>Recherche d'offres d'emploi</h1>
+    <p>Génère des liens de recherche pré-remplis sur 20+ plateformes selon tes critères.</p>
+  </div>
+
+  <div class="cols">
+
+    <!-- ═══ PARAMÈTRES ═══ -->
+    <div>
+      <div class="card">
+        <div class="card-head">Mes critères</div>
+
+        <label>Métier / Poste recherché *</label>
+        <input type="text" id="kw-main" placeholder="ex. Chargé(e) de marketing digital">
+
+        <label>Secteur (optionnel)</label>
+        <input type="text" id="kw-sector" placeholder="ex. Startup, ESS, Santé, Retail...">
+
+        <label>Localisation</label>
+        <input type="text" id="kw-location" value="Paris" placeholder="Paris, Lyon, Bordeaux, remote...">
+
+        <label>Type de contrat</label>
+        <div class="chip-row" id="contract-chips">
+          <div class="chip on" data-v="CDI">CDI</div>
+          <div class="chip" data-v="CDD">CDD</div>
+          <div class="chip" data-v="Freelance">Freelance</div>
+          <div class="chip" data-v="Stage">Stage</div>
+          <div class="chip" data-v="Alternance">Alternance</div>
+        </div>
+
+        <label>Compétences clés (séparées par virgules)</label>
+        <input type="text" id="kw-skills" placeholder="ex. Excel, Canva, Gestion de projet...">
+
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+          <button class="gen-btn" onclick="buildLinks()">🔍 Générer les liens</button>
+          <button class="outline-btn" onclick="openAll()">↗ Tout ouvrir</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Raccourcis profil</div>
+        <div id="preset-btns">
+          <button class="preset-btn" onclick="setPreset('gen')">🔄 Charger depuis mon profil</button>
+          <div style="height:1px;background:var(--cream);margin:8px 0;"></div>
+          <button class="preset-btn" onclick="setPreset('marketing')">📢 Marketing Digital</button>
+          <button class="preset-btn" onclick="setPreset('comm')">📣 Communication</button>
+          <button class="preset-btn" onclick="setPreset('projet')">📋 Gestion de projet</button>
+          <button class="preset-btn" onclick="setPreset('design')">🎨 Design / UX-UI</button>
+          <button class="preset-btn" onclick="setPreset('dev')">💻 Développement Web</button>
+          <button class="preset-btn" onclick="setPreset('commercial')">🤝 Commercial / Vente</button>
+          <button class="preset-btn" onclick="setPreset('rh')">👥 RH / Recrutement</button>
+          <button class="preset-btn" onclick="setPreset('compta')">📊 Comptabilité / Finance</button>
+          <button class="preset-btn" onclick="setPreset('freelance')">⚡ Mission Freelance</button>
+          <button class="preset-btn" onclick="setPreset('stage')">🎓 Stage / Alternance</button>
+        </div>
+      </div>
+
+      <div class="tip-box">
+        <strong>💡 Stratégie multi-plateformes</strong><br>
+        Certaines offres ne sont publiées que sur 1-2 sites. Varie tes sources : LinkedIn pour le réseau, WTTJ pour les startups, APEC pour les postes cadres, France Travail pour les PME, Malt pour le freelance.
+      </div>
+    </div>
+
+    <!-- ═══ RÉSULTATS ═══ -->
+    <div>
+      <div class="query-box" id="query-box">
+        <h4>Requête active</h4>
+        <div id="query-tags"></div>
+      </div>
+
+      <!-- GÉNÉRALISTES -->
+      <div class="sep">🌐 Généralistes</div>
+      <div class="pf-grid" id="pf-gen"></div>
+
+      <!-- SPÉCIALISÉES CADRES & QUALIFIÉS -->
+      <div class="sep" style="margin-top:18px;">🎓 Cadres & profils qualifiés</div>
+      <div class="pf-grid" id="pf-cadres"></div>
+
+      <!-- STARTUPS & TECH -->
+      <div class="sep" style="margin-top:18px;">🚀 Startups & Tech</div>
+      <div class="pf-grid" id="pf-tech"></div>
+
+      <!-- FREELANCE & MISSION -->
+      <div class="sep" style="margin-top:18px;">⚡ Freelance & missions</div>
+      <div class="pf-grid" id="pf-freelance"></div>
+
+      <!-- INTERNATIONAL -->
+      <div class="sep" style="margin-top:18px;">🌍 International & remote</div>
+      <div class="pf-grid" id="pf-intl"></div>
+
+      <!-- SECTORIELS -->
+      <div class="sep" style="margin-top:18px;">🏢 Sectoriels & spécialisés</div>
+      <div class="pf-grid" id="pf-sector"></div>
+
+      <!-- GOOGLE -->
+      <div class="sep" style="margin-top:18px;">🔍 Moteurs de recherche</div>
+      <div class="pf-grid" id="pf-google"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const P_KEY = 'agent_profile';
+function loadProfile() { try { return JSON.parse(localStorage.getItem(P_KEY))||null; } catch { return null; } }
+
+// ── CHIPS ──
+document.querySelectorAll('#contract-chips .chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('#contract-chips .chip').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+}));
+
+// ── PRESETS ──
+const PRESETS = {
+  marketing: { main:'Marketing Digital', sector:'', skills:'Google Ads, Meta Ads, SEO, Analytics, HubSpot', contract:'CDI' },
+  comm: { main:'Chargé communication', sector:'', skills:'Réseaux sociaux, Canva, Rédaction, Relations presse', contract:'CDI' },
+  projet: { main:'Chef de projet digital', sector:'', skills:'Scrum, Agile, Gestion de projet, Jira, Notion', contract:'CDI' },
+  design: { main:'Designer UX UI', sector:'', skills:'Figma, Adobe XD, Photoshop, Illustrator, Prototype', contract:'CDI' },
+  dev: { main:'Développeur Web', sector:'', skills:'JavaScript, React, HTML, CSS, Python, SQL', contract:'CDI' },
+  commercial: { main:'Commercial', sector:'', skills:'Prospection, Négociation, CRM, B2B, Salesforce', contract:'CDI' },
+  rh: { main:'Chargé RH', sector:'', skills:'Recrutement, SIRH, Paie, Formation, GPEC', contract:'CDI' },
+  compta: { main:'Comptable', sector:'', skills:'Comptabilité, Excel, Sage, Bilan, TVA, Paie', contract:'CDI' },
+  freelance: { main:'Consultant', sector:'', skills:'Mission, Freelance, Expertise, Conseil', contract:'Freelance' },
+  stage: { main:'Stagiaire', sector:'', skills:'', contract:'Stage' },
+};
+
+function setPreset(key) {
+  if (key === 'gen') {
+    const p = loadProfile();
+    if (!p) { showToast('Configure d\'abord ton profil dans ✦ Agent CV'); return; }
+    document.getElementById('kw-main').value = p.metiers?.split(',')[0]?.trim() || '';
+    document.getElementById('kw-sector').value = p.sectors || '';
+    document.getElementById('kw-skills').value = p.skills?.split('\n')[0] || '';
+    document.getElementById('kw-location').value = p.location?.split('·')[0]?.trim() || 'Paris';
+    buildLinks();
+    return;
+  }
+  const pr = PRESETS[key];
+  if (!pr) return;
+  document.getElementById('kw-main').value = pr.main;
+  document.getElementById('kw-sector').value = pr.sector;
+  document.getElementById('kw-skills').value = pr.skills;
+  document.querySelectorAll('#contract-chips .chip').forEach(c=>c.classList.toggle('on', c.dataset.v===pr.contract));
+  buildLinks();
+}
+
+// ── BUILD LINKS ──
+function enc(s) { return encodeURIComponent(s||''); }
+
+function buildLinks() {
+  const main = document.getElementById('kw-main').value.trim();
+  if (!main) { showToast('Entre un métier / poste.'); return; }
+  const sector = document.getElementById('kw-sector').value.trim();
+  const location = document.getElementById('kw-location').value.trim() || 'Paris';
+  const contract = document.querySelector('#contract-chips .chip.on')?.dataset.v || 'CDI';
+  const skills = document.getElementById('kw-skills').value.trim();
+
+  const q = [main, sector].filter(Boolean).join(' ');
+  const locationParis = location.toLowerCase().includes('paris') ? '75056' : '';
+
+  // Query preview
+  document.getElementById('query-box').classList.add('vis');
+  document.getElementById('query-tags').innerHTML = [main, sector, location, contract, ...skills.split(',').slice(0,4).map(s=>s.trim())]
+    .filter(Boolean).map(t=>`<span class="q-tag">${t}</span>`).join('');
+
+  // Contract codes
+  const liContract = contract==='CDI'?'F':contract==='CDD'?'C':contract==='Stage'?'I':'';
+  const indeedType = contract==='CDI'?'permanent':contract==='CDD'?'contract':contract==='Stage'?'internship':'';
+
+  const PF_GEN = [
+    { id:'linkedin', logo:'💼', name:'LinkedIn Jobs', badge:'b-hot', blabel:'🔥 N°1 réseau', desc:'Le réseau professionnel incontournable en France',
+      links:[
+        { label:`${main}${sector?' · '+sector:''}`, sub:location, url:`https://www.linkedin.com/jobs/search/?keywords=${enc(q)}&location=${enc(location)}${liContract?'&f_JT='+liContract:''}` },
+        { label:'Offres récentes — 24h', sub:location, url:`https://www.linkedin.com/jobs/search/?keywords=${enc(q)}&location=${enc(location)}&f_TPR=r86400` },
+        { label:'Télétravail complet', sub:'France', url:`https://www.linkedin.com/jobs/search/?keywords=${enc(main)}&location=France&f_WT=2` },
+      ]},
+    { id:'indeed', logo:'🔵', name:'Indeed', badge:'b-hot', blabel:'🔥 Volume max', desc:'Plus grande base d\'offres en France',
+      links:[
+        { label:`${q}`, sub:location, url:`https://fr.indeed.com/emplois?q=${enc(q)}&l=${enc(location)}${indeedType?'&jt='+indeedType:''}` },
+        { label:'Publiées ces 3 derniers jours', sub:location, url:`https://fr.indeed.com/emplois?q=${enc(q)}&l=${enc(location)}&fromage=3` },
+        { label:'Télétravail / Remote', sub:'France', url:`https://fr.indeed.com/emplois?q=${enc(main)}+t%C3%A9l%C3%A9travail&l=France` },
+      ]},
+    { id:'monster', logo:'👾', name:'Monster', badge:'b-good', blabel:'✓ Généraliste', desc:'Plateforme historique avec CVthèque',
+      links:[
+        { label:`${q}`, sub:location, url:`https://www.monster.fr/emploi/recherche/?q=${enc(q)}&where=${enc(location)}` },
+      ]},
+    { id:'meteojob', logo:'🌤', name:'Météojob', badge:'b-good', blabel:'✓ Matching', desc:'Algorithme de matching par score',
+      links:[
+        { label:`${q}`, sub:location, url:`https://www.meteojob.com/jobsearch/offers?what=${enc(q)}&where=${enc(location)}` },
+      ]},
+    { id:'pole', logo:'🇫🇷', name:'France Travail', badge:'b-good', blabel:'✓ Officiel', desc:'Toutes les offres déclarées en France',
+      links:[
+        { label:`${main}`, sub:'Île-de-France', url:`https://candidat.pole-emploi.fr/offres/recherche?motsCles=${enc(main)}&lieuCode=75056&typeCode=1` },
+        { label:'Toute la France', sub:'National', url:`https://candidat.pole-emploi.fr/offres/recherche?motsCles=${enc(main)}` },
+      ]},
+    { id:'hellowork', logo:'👋', name:'HelloWork', badge:'b-good', blabel:'✓ Agrégateur', desc:'Agrège des milliers d\'entreprises',
+      links:[
+        { label:`${q}`, sub:location, url:`https://www.hellowork.com/fr-fr/emploi/recherche.html?k=${enc(q)}&l=${enc(location)}` },
+        { label:'Remote accepté', sub:'France', url:`https://www.hellowork.com/fr-fr/emploi/recherche.html?k=${enc(main)}&l=France&remote=true` },
+      ]},
+    { id:'regionsjob', logo:'🗺', name:'RegionsJob / Figaro Emploi', badge:'b-good', blabel:'✓ Régions', desc:'Très bonne couverture hors Paris',
+      links:[
+        { label:`${q}`, sub:location, url:`https://www.figaro-emploi.fr/offres-emploi/?query=${enc(q)}&location=${enc(location)}` },
+      ]},
+  ];
+
+  const PF_CADRES = [
+    { id:'apec', logo:'🎓', name:'APEC', badge:'b-good', blabel:'✓ Cadres', desc:'Réservé aux profils cadres Bac+4/5',
+      links:[
+        { label:`${q}`, sub:'Île-de-France', url:`https://www.apec.fr/candidat/recherche-emploi.html/emploi?motsCles=${enc(q)}&lieu=75056&lieuLabel=Paris` },
+        { label:'Télétravail', sub:'France', url:`https://www.apec.fr/candidat/recherche-emploi.html/emploi?motsCles=${enc(main)}&typeTravail=TELEWORKING` },
+      ]},
+    { id:'cadremploi', logo:'📋', name:'Cadremploi', badge:'b-good', blabel:'✓ Cadres confirmés', desc:'3–15 ans d\'expérience',
+      links:[
+        { label:`${q}`, sub:'Paris', url:`https://www.cadremploi.fr/emploi/liste_offres.html?kMot=${enc(q)}&libelleLocalisation=Paris` },
+      ]},
+    { id:'michaelpage', logo:'🔷', name:'Michael Page', badge:'b-niche', blabel:'• Cabinet recrutement', desc:'Cabinet spécialisé postes qualifiés',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://www.michaelpage.fr/jobs/${enc(main.toLowerCase().replace(/ /g,'-'))}` },
+      ]},
+    { id:'hays', logo:'🔶', name:'Hays', badge:'b-niche', blabel:'• Cabinet recrutement', desc:'Recrutement spécialisé tous secteurs',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://www.hays.fr/offres-emploi/search?q=${enc(main)}&location=${enc(location)}` },
+      ]},
+    { id:'randstad', logo:'🔴', name:'Randstad', badge:'b-good', blabel:'✓ Intérim & CDI', desc:'Leader intérim, fort en industrie & logistique',
+      links:[
+        { label:`${main}`, sub:location, url:`https://www.randstad.fr/offres-emploi/${enc(main.toLowerCase().replace(/ /g,'-'))}_${enc(location.toLowerCase())}` },
+      ]},
+    { id:'adecco', logo:'🔵', name:'Adecco', badge:'b-good', blabel:'✓ Intérim & CDI', desc:'Grands groupes et PME, toutes filières',
+      links:[
+        { label:`${main}`, sub:location, url:`https://www.adecco.fr/offres-emploi/?q=${enc(main)}&location=${enc(location)}` },
+      ]},
+    { id:'manpower', logo:'⚙', name:'Manpower', badge:'b-good', blabel:'✓ Intérim', desc:'Spécialisé industrie, technique, logistique',
+      links:[
+        { label:`${main}`, sub:location, url:`https://www.manpower.fr/candidats/nos-offres-d-emploi?q=${enc(q)}&l=${enc(location)}` },
+      ]},
+  ];
+
+  const PF_TECH = [
+    { id:'wttj', logo:'🌿', name:'Welcome to the Jungle', badge:'b-hot', blabel:'🔥 Startups', desc:'Référence absolue startups & scale-ups',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://www.welcometothejungle.com/fr/jobs?query=${enc(main)}&refinementList%5Boffice_country_codes%5D%5B%5D=FR` },
+        { label:'Remote full-time', sub:'France', url:`https://www.welcometothejungle.com/fr/jobs?query=${enc(main)}&refinementList%5Bremote%5D%5B%5D=fulltime` },
+      ]},
+    { id:'lesjeudis', logo:'👨‍💻', name:'Keljob / LesJeudis', badge:'b-niche', blabel:'• Tech & digital', desc:'Offres tech, marketing digital, web',
+      links:[
+        { label:`${q}`, sub:'IDF', url:`https://keljob.com/emploi/offres?q=${enc(main)}&location=Paris` },
+      ]},
+    { id:'choosemycompany', logo:'⭐', name:'ChooseMyCompany', badge:'b-niche', blabel:'• Culture & QVT', desc:'Entreprises bien notées par leurs salariés',
+      links:[
+        { label:`${main} — entreprises certifiées`, sub:'France', url:`https://choosemycompany.com/fr/trouver-un-emploi?q=${enc(main)}` },
+      ]},
+    { id:'jobteaser', logo:'🎯', name:'JobTeaser', badge:'b-niche', blabel:'• Jeunes diplômés', desc:'Offres pour étudiants et jeunes diplômés',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://www.jobteaser.com/fr/job-offers?search=${enc(q)}&work_location=${enc(location)}` },
+      ]},
+    { id:'humancoders', logo:'🧑‍💻', name:'Human Coders Jobs', badge:'b-niche', blabel:'• Dev & Tech', desc:'Développeurs, data, infra uniquement',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://jobs.humancoders.com/?search=${enc(main)}` },
+      ]},
+  ];
+
+  const PF_FREELANCE = [
+    { id:'malt', logo:'🟠', name:'Malt', badge:'b-freelance', blabel:'⚡ Référence freelance', desc:'N°1 missions freelance en France',
+      links:[
+        { label:`${main} — Mission`, sub:'France', url:`https://www.malt.fr/s?q=${enc(main)}` },
+      ]},
+    { id:'comet', logo:'☄', name:'Comet', badge:'b-freelance', blabel:'⚡ Freelance tech', desc:'Missions tech et digital, tarifs élevés',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://www.comet.co/fr/freelances?search=${enc(main)}` },
+      ]},
+    { id:'crème', logo:'🍦', name:'Crème de la Crème', badge:'b-freelance', blabel:'⚡ Freelance', desc:'Profils vérifiés, missions qualifiées',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://cremedelacreme.io/fr/talents?query=${enc(main)}` },
+      ]},
+    { id:'fiverr', logo:'🟢', name:'Fiverr / Upwork', badge:'b-int', blabel:'🌍 International', desc:'Plateformes mondiales de missions freelance',
+      links:[
+        { label:'Fiverr', sub:'Mondial', url:`https://www.fiverr.com/search/gigs?query=${enc(main)}` },
+        { label:'Upwork', sub:'Mondial', url:`https://www.upwork.com/search/jobs/?q=${enc(main)}` },
+      ]},
+  ];
+
+  const PF_INTL = [
+    { id:'eurojobs', logo:'🇪🇺', name:'EuroJobs / EuroBrussels', badge:'b-int', blabel:'🌍 Europe', desc:'Postes dans les institutions européennes et ONG',
+      links:[
+        { label:`${main}`, sub:'Europe', url:`https://eurojobs.com/search-jobs/?keywords=${enc(main)}` },
+      ]},
+    { id:'linkedin-intl', logo:'🌐', name:'LinkedIn — Remote Mondial', badge:'b-remote', blabel:'🌍 Full remote', desc:'Offres remote mondiales sur LinkedIn',
+      links:[
+        { label:`${main} — remote worldwide`, sub:'Monde', url:`https://www.linkedin.com/jobs/search/?keywords=${enc(main)}&location=Worldwide&f_WT=2` },
+      ]},
+    { id:'remoteok', logo:'🏖', name:'RemoteOK', badge:'b-remote', blabel:'🌍 100% remote', desc:'Exclusivement des offres full remote',
+      links:[
+        { label:`${main}`, sub:'Monde', url:`https://remoteok.com/remote-${enc(main.toLowerCase().replace(/ /g,'-'))}-jobs` },
+      ]},
+    { id:'weworkremotely', logo:'💻', name:'We Work Remotely', badge:'b-remote', blabel:'🌍 100% remote', desc:'Grande plateforme remote internationale',
+      links:[
+        { label:`${main}`, sub:'Monde', url:`https://weworkremotely.com/remote-jobs/search?term=${enc(main)}` },
+      ]},
+  ];
+
+  const PF_SECTOR = [
+    { id:'emploi-asso', logo:'🤝', name:'Emploi-Associatif', badge:'b-niche', blabel:'• ESS / Asso', desc:'Offres secteur associatif et ESS',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://www.emploi-associatif.fr/offres/?q=${enc(main)}` },
+      ]},
+    { id:'espace-emploi', logo:'🏗', name:'BTP / Emploi BTP', badge:'b-niche', blabel:'• BTP', desc:'Secteur construction et travaux',
+      links:[
+        { label:`${main}`, sub:location, url:`https://www.emploi-btp.fr/offres-emploi/?q=${enc(main)}&location=${enc(location)}` },
+      ]},
+    { id:'hospitality', logo:'🏨', name:'Hospitality ON / Hotelcareer', badge:'b-niche', blabel:'• Hôtellerie', desc:'Hôtellerie, restauration, tourisme',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://www.hospitalityon.com/fr/jobs?q=${enc(q)}` },
+        { label:'Hotelcareer', sub:'France', url:`https://www.hotelcareer.fr/search/?what=${enc(main)}&where=${enc(location)}` },
+      ]},
+    { id:'indeed-sante', logo:'🏥', name:'Emploi Santé (Seek / RegionsJob)', badge:'b-niche', blabel:'• Santé', desc:'Secteur santé, médico-social',
+      links:[
+        { label:`${main}`, sub:location, url:`https://fr.indeed.com/emplois?q=${enc(main)}&l=${enc(location)}&sc=0kf%3Aocc%28HEALTHCARE%29%3B` },
+      ]},
+    { id:'publicjobs', logo:'🏛', name:'Emploi Public', badge:'b-niche', blabel:'• Fonction publique', desc:'Toutes les offres de la fonction publique',
+      links:[
+        { label:`${main}`, sub:'France', url:`https://www.emploipublic.fr/offres?q=${enc(main)}&location=${enc(location)}` },
+        { label:'Place de l\'Emploi Public', sub:'France', url:`https://place-emploi-public.gouv.fr/offre-emploi/recherche/?SEARCH_CVS=${enc(main)}` },
+      ]},
+  ];
+
+  const PF_GOOGLE = [
+    { id:'google-jobs', logo:'🔍', name:'Google Jobs', badge:'b-hot', blabel:'🔥 Agrégateur universel', desc:'Toutes les offres du web en temps réel',
+      links:[
+        { label:`${main} ${contract} ${location}`, sub:'Tous sites', url:`https://www.google.com/search?q=${enc(main+' '+contract+' '+location)}&ibp=htl;jobs` },
+        { label:`${main} télétravail remote France`, sub:'Remote', url:`https://www.google.com/search?q=${enc(main+' télétravail remote France')}&ibp=htl;jobs` },
+        { label:`${main} offre emploi CDI CDD`, sub:'Élargi', url:`https://www.google.com/search?q=${enc(main+' offre emploi')}&ibp=htl;jobs` },
+      ]},
+    { id:'bing-jobs', logo:'🔷', name:'Bing — Offres emploi', badge:'b-good', blabel:'✓ Alternatif', desc:'Bing agrège aussi les offres, moins connu = moins concurrence',
+      links:[
+        { label:`${q} ${contract}`, sub:location, url:`https://www.bing.com/jobs/search?q=${enc(q+' '+contract)}&where=${enc(location)}` },
+      ]},
+  ];
+
+  render('pf-gen', PF_GEN);
+  render('pf-cadres', PF_CADRES);
+  render('pf-tech', PF_TECH);
+  render('pf-freelance', PF_FREELANCE);
+  render('pf-intl', PF_INTL);
+  render('pf-sector', PF_SECTOR);
+  render('pf-google', PF_GOOGLE);
+}
+
+function render(id, platforms) {
+  document.getElementById(id).innerHTML = platforms.map(p => `
+    <div class="pf-card" id="pf-${p.id}">
+      <div class="pf-head" onclick="toggle('${p.id}')">
+        <div class="pf-logo">${p.logo}</div>
+        <div class="pf-info">
+          <div class="pf-name">${p.name} <span class="badge ${p.badge}">${p.blabel}</span></div>
+          <div class="pf-desc">${p.desc}</div>
+        </div>
+        <div class="pf-arrow">▾</div>
+      </div>
+      <div class="pf-links">
+        ${p.links.map(l=>`
+          <a href="${l.url}" target="_blank" rel="noopener" class="pf-link">
+            ↗ ${l.label}
+            <span class="lk-sub">${l.sub}</span>
+          </a>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggle(id) { document.getElementById('pf-'+id).classList.toggle('open'); }
+
+function openAll() {
+  const links = document.querySelectorAll('.pf-link[href]');
+  if (!links.length) { buildLinks(); return; }
+  const opened = new Set();
+  links.forEach(l => {
+    const card = l.closest('.pf-card');
+    if (card && !opened.has(card.id)) {
+      window.open(l.href,'_blank'); opened.add(card.id);
+    }
+  });
+  showToast(`${opened.size} plateformes ouvertes !`);
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Init nav brand from profile
+(function(){
+  const p=loadProfile();
+  if(p){
+    const first=p.name.split(' ')[0];
+    document.getElementById('nav-brand').innerHTML=`${first} <small>Agent Candidature</small>`;
+    document.getElementById('kw-location').value=p.location?.split('·')[0]?.trim()||'Paris';
+    if(p.metiers) document.getElementById('kw-main').value=p.metiers.split(',')[0].trim();
+    if(p.skills) document.getElementById('kw-skills').value=p.skills.split('\n')[0];
+  }
+  buildLinks();
+})();
+</script>
+</body>
+</html>

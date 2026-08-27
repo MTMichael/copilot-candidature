@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Match Offres — Agent Candidature</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0f0e0d; --paper:#f6f3ed; --cream:#eae5db; --gold:#c4a24a; --gold-pale:#f5edcf;
+  --muted:#7a7060; --accent:#1e3d32; --white:#ffffff; --radius:3px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;}
+nav{background:var(--accent);border-bottom:2px solid var(--gold);padding:0 24px;display:flex;align-items:stretch;position:sticky;top:0;z-index:50;}
+.nav-brand{font-family:'Cormorant Garamond',serif;color:var(--gold);font-size:1.4rem;padding:11px 18px 11px 0;border-right:1px solid rgba(255,255,255,0.12);margin-right:4px;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.nav-brand small{color:rgba(246,243,237,0.5);font-family:'DM Sans',sans-serif;font-size:0.65rem;letter-spacing:.1em;text-transform:uppercase;}
+nav a{color:rgba(246,243,237,0.6);text-decoration:none;padding:0 13px;font-size:.77rem;font-weight:500;display:flex;align-items:center;gap:5px;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;}
+nav a:hover,nav a.active{color:var(--paper);border-bottom-color:var(--gold);}
+
+.page{max-width:1100px;margin:0 auto;padding:26px 18px 60px;}
+.page-head{margin-bottom:22px;}
+.page-head h1{font-family:'Cormorant Garamond',serif;font-size:1.7rem;color:var(--accent);}
+.page-head p{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.cols{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start;}
+@media(max-width:780px){.cols{grid-template-columns:1fr;}}
+
+.card{background:var(--white);border:1px solid var(--cream);border-radius:var(--radius);padding:18px;box-shadow:0 1px 5px rgba(0,0,0,.04);}
+.card+.card{margin-top:14px;}
+.card-head{font-family:'Cormorant Garamond',serif;font-size:.95rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--cream);padding-bottom:8px;margin-bottom:12px;}
+
+label{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;margin-top:11px;}
+label:first-of-type{margin-top:0;}
+input[type="text"]{width:100%;border:1px solid var(--cream);border-radius:var(--radius);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:.83rem;color:var(--ink);background:var(--paper);outline:none;transition:border-color .18s;}
+input:focus{border-color:var(--gold);background:var(--white);}
+
+.chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.chip{border:1px solid var(--cream);background:var(--paper);border-radius:2px;padding:5px 10px;font-size:.75rem;cursor:pointer;color:var(--muted);font-weight:500;transition:all .13s;}
+.chip:hover{border-color:var(--gold);color:var(--ink);}
+.chip.on{background:var(--accent);color:var(--paper);border-color:var(--accent);}
+
+.gen-btn{background:var(--accent);color:var(--paper);border:none;border-radius:var(--radius);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:6px;}
+.gen-btn:hover{background:#152c24;}
+.outline-btn{background:var(--paper);color:var(--ink);border:1px solid var(--cream);border-radius:var(--radius);padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .13s;}
+.outline-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── QUERY PREVIEW ── */
+.query-box{background:var(--accent);color:var(--paper);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:none;}
+.query-box.vis{display:block;}
+.query-box h4{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--gold);margin-bottom:7px;}
+.q-tag{display:inline-block;background:rgba(196,162,74,.2);border:1px solid rgba(196,162,74,.3);color:var(--gold);padding:2px 7px;border-radius:2px;font-size:.67rem;font-weight:600;margin:2px 3px 2px 0;}
+
+/* ── SECTION SEP ── */
+.sep{font-family:'Cormorant Garamond',serif;font-size:.88rem;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:10px;}
+.sep::after{content:'';flex:1;height:1px;background:var(--cream);}
+
+/* ── PLATFORM CARDS ── */
+.pf-grid{display:grid;gap:8px;}
+.pf-card{border:1px solid var(--cream);border-radius:var(--radius);background:var(--paper);overflow:hidden;transition:all .15s;}
+.pf-card:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.pf-head{padding:10px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;}
+.pf-logo{font-size:1.2rem;width:28px;text-align:center;flex-shrink:0;}
+.pf-info{flex:1;}
+.pf-name{font-weight:700;font-size:.84rem;display:flex;align-items:center;gap:6px;}
+.pf-desc{font-size:.68rem;color:var(--muted);margin-top:1px;}
+.badge{font-size:.58rem;padding:2px 6px;border-radius:2px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.b-hot{background:#fde8e8;color:#9b2f2f;}
+.b-good{background:#e8f5ee;color:#1a5c40;}
+.b-niche{background:#e8ecf5;color:#1a3659;}
+.b-int{background:#f5f0e8;color:#7a5010;}
+.b-remote{background:#f0e8f5;color:#4a1a6a;}
+.b-freelance{background:#fff0e0;color:#8a4000;}
+
+.pf-links{display:none;padding:0 13px 11px;flex-direction:column;gap:5px;border-top:1px solid var(--cream);}
+.pf-card.open .pf-links{display:flex;padding-top:9px;}
+.pf-link{display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--white);border:1px solid var(--cream);border-radius:var(--radius);text-decoration:none;color:var(--ink);font-size:.77rem;font-weight:500;transition:all .13s;}
+.pf-link:hover{border-color:var(--accent);background:var(--accent);color:var(--paper);}
+.pf-link .lk-sub{font-size:.66rem;color:var(--muted);margin-left:auto;}
+.pf-link:hover .lk-sub{color:rgba(246,243,237,.6);}
+.pf-arrow{color:var(--muted);font-size:.8rem;margin-left:auto;}
+
+/* ── PRESET SHORTCUTS ── */
+.preset-btn{display:block;width:100%;padding:8px 11px;border:1px solid var(--cream);background:var(--paper);border-radius:var(--radius);font-size:.78rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted);text-align:left;transition:all .13s;margin-bottom:5px;}
+.preset-btn:hover{border-color:var(--gold);color:var(--ink);background:var(--white);}
+
+.tip-box{background:var(--gold-pale);border:1px solid rgba(196,162,74,.3);border-radius:var(--radius);padding:11px 13px;font-size:.76rem;line-height:1.6;color:var(--ink);margin-top:12px;}
+.tip-box strong{color:var(--accent);}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--accent);color:var(--paper);padding:9px 14px;border-radius:var(--radius);font-size:.79rem;box-shadow:0 4px 16px rgba(0,0,0,.2);transform:translateY(50px);opacity:0;transition:all .3s;z-index:400;border-left:3px solid var(--gold);}
+.toast.show{transform:translateY(0);opacity:1;}
+
+.wrap{max-width:840px;margin:0 auto;padding:26px 20px 60px;}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--accent);margin-bottom:4px;}
+.page-sub{font-size:.82rem;color:var(--muted);margin-bottom:20px;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0;}
+.chip-toggle{padding:6px 14px;border:1px solid var(--cream);background:var(--paper);border-radius:20px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted);transition:all .13s;user-select:none;}
+.chip-toggle.on{background:var(--accent);color:var(--paper);border-color:var(--accent);}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:5px;font-weight:500;}
+.field input{width:100%;padding:9px 11px;border:1px solid var(--cream);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:.85rem;background:var(--white);color:var(--ink);box-sizing:border-box;}
+.big-btn{width:100%;padding:12px;background:var(--accent);color:var(--paper);border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s;border-bottom:2px solid var(--gold);}
+.big-btn:hover{filter:brightness(1.12);}
+.big-btn:disabled{opacity:.55;cursor:not-allowed;}
+.offer{border:1px solid var(--cream);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;background:var(--white);}
+.offer-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.offer h4{font-family:'Cormorant Garamond',serif;font-size:1.08rem;color:var(--ink);margin:0;}
+.offer .co{font-size:.8rem;color:var(--muted);margin-top:2px;}
+.score{flex-shrink:0;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;}
+.tag{display:inline-block;font-size:.68rem;padding:2px 9px;border-radius:20px;background:var(--gold-pale);color:var(--accent);margin-top:6px;font-weight:600;letter-spacing:.03em;}
+.offer ul{margin:8px 0 0;padding-left:18px;}
+.offer li{font-size:.8rem;color:var(--ink);margin-bottom:3px;}
+.offer li.gap{color:#a06a1a;}
+.offer a.apply{display:inline-block;margin-top:10px;font-size:.8rem;color:var(--accent);font-weight:600;text-decoration:none;border-bottom:1px solid var(--gold);}
+.muted-note{font-size:.76rem;color:var(--muted);line-height:1.5;}
+.link-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
+.link-row a{font-size:.76rem;padding:6px 11px;border:1px solid var(--cream);border-radius:20px;color:var(--muted);text-decoration:none;transition:all .13s;background:var(--paper);}
+.link-row a:hover{border-color:var(--gold);color:var(--ink);}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:7px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.nav-end{margin-left:auto;display:flex;align-items:center;}
+.nav-settings-btn{background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(246,243,237,0.7);padding:5px 10px;border-radius:3px;font-size:0.74rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.14s;text-decoration:none;display:inline-flex;align-items:center;white-space:nowrap;}
+.nav-settings-btn:hover{border-color:var(--gold);color:var(--paper);}
+</style>
+</head>
+
+<body>
+<nav>
+  <div class="nav-brand" id="nav-brand">✦ <small>Agent Candidature</small></div>
+  <a href="1-agent-candidature.html">✦ Agent CV</a>
+  <a href="2-tracker.html">📊 Tracker</a>
+  <a href="3-planning.html">⏱ Planning</a>
+  <a href="4-recherche.html">🔍 Recherche</a>
+  <a href="5-match.html" class="active">🎯 Match</a>
+  <div class="nav-end">
+    <a class="nav-settings-btn" href="1-agent-candidature.html#profil">⚙ Mon profil</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="page-title">🎯 Match CV ↔ offres en ligne</div>
+  <div class="page-sub">Les offres actuelles qui correspondent à ton profil, filtrées par type de contrat.</div>
+
+  <div class="card">
+    <div class="card-head">Types de contrat recherchés</div>
+    <div class="chips" id="contract-chips">
+      <div class="chip-toggle on" data-c="Stage">🎓 Stage</div>
+      <div class="chip-toggle on" data-c="Alternance">📘 Alternance</div>
+      <div class="chip-toggle on" data-c="CDD">📄 CDD</div>
+      <div class="chip-toggle on" data-c="CDI">💼 CDI</div>
+      <div class="chip-toggle on" data-c="Intérim">⚡ Intérim</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">Ce que je cherche</div>
+    <div class="field"><label>Poste / métier</label><input id="m-metier" placeholder="ex. Assistante de direction"></div>
+    <div class="field"><label>Localisation</label><input id="m-lieu" placeholder="ex. Paris, Île-de-France"></div>
+    <button class="big-btn" id="match-btn" onclick="runMatch()">🔎 Matcher avec des offres en ligne</button>
+    <p class="muted-note" style="margin-top:10px;">L'agent recherche des offres réelles et récentes sur le web, puis les classe selon leur correspondance avec ton profil.</p>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="card">
+    <div class="card-head">Recherches directes (toujours disponibles)</div>
+    <p class="muted-note">Liens filtrés par contrat sur les principaux sites — utiles si le matching automatique n'est pas disponible dans ton environnement.</p>
+    <div id="direct-links"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const P_KEY='agent_profile';
+function loadProfile(){try{return JSON.parse(localStorage.getItem(P_KEY));}catch(e){return null;}}
+const profile = loadProfile();
+function apiHeaders(){const h={'Content-Type':'application/json'};const k=(localStorage.getItem('anthropic_api_key')||'').trim();if(k){h['x-api-key']=k;h['anthropic-version']='2023-06-01';h['anthropic-dangerous-direct-browser-access']='true';}return h;}
+
+(function(){try{if(profile&&profile.name){var b=document.getElementById('nav-brand');var f=profile.name.trim().split(' ')[0];b.innerHTML=f+' <small>Agent Candidature</small>';}}catch(e){}})();
+
+if(profile){
+  document.getElementById('m-metier').value=(profile.metiers||'').split(',')[0].trim();
+  const loc=(profile.mobility && profile.mobilityShow!==false)?profile.mobility:(profile.location||'');
+  document.getElementById('m-lieu').value=loc;
+}
+
+document.querySelectorAll('.chip-toggle').forEach(c=>c.addEventListener('click',()=>{c.classList.toggle('on');renderDirectLinks();}));
+function selectedContracts(){return [...document.querySelectorAll('.chip-toggle.on')].map(c=>c.dataset.c);}
+function enc(s){return encodeURIComponent((s||'').trim());}
+
+function renderDirectLinks(){
+  const metier=document.getElementById('m-metier').value||'';
+  const lieu=document.getElementById('m-lieu').value||'';
+  const cs=selectedContracts();
+  const box=document.getElementById('direct-links');
+  if(!cs.length){box.innerHTML='<p class="muted-note">Sélectionne au moins un type de contrat.</p>';return;}
+  box.innerHTML=cs.map(c=>{
+    const q=enc(metier+' '+c), l=enc(lieu);
+    const links=[
+      ['Indeed','https://fr.indeed.com/jobs?q='+q+'&l='+l],
+      ['Welcome to the Jungle','https://www.welcometothejungle.com/fr/jobs?query='+q+'&aroundQuery='+l],
+      ['LinkedIn','https://www.linkedin.com/jobs/search/?keywords='+q+'&location='+l],
+      ['HelloWork','https://www.hellowork.com/fr-fr/emploi/recherche.html?k='+q+'&l='+l],
+      ['France Travail','https://candidat.francetravail.fr/offres/recherche?motsCles='+q]
+    ];
+    return '<div style="margin-top:12px;"><strong style="font-size:.8rem;color:var(--accent);">'+c+'</strong><div class="link-row">'+links.map(x=>'<a href="'+x[1]+'" target="_blank" rel="noopener">'+x[0]+' ↗</a>').join('')+'</div></div>';
+  }).join('');
+}
+['m-metier','m-lieu'].forEach(id=>document.getElementById(id).addEventListener('input',renderDirectLinks));
+renderDirectLinks();
+
+function scoreColor(s){if(s>=80)return '#2e7d5b';if(s>=60)return '#c4a24a';if(s>=40)return '#c47a1a';return '#9a9a9a';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function renderOffers(list){
+  const res=document.getElementById('results');
+  if(!list||!list.length){res.innerHTML='<div class="card"><p class="muted-note">Aucune offre trouvée pour ces critères. Élargis la zone ou les contrats, ou utilise les recherches directes ci-dessous.</p></div>';return;}
+  res.innerHTML='<div class="card"><div class="card-head">'+list.length+' offre(s) — classées par correspondance</div>'+list.map(o=>{
+    const sc=Math.max(0,Math.min(100,parseInt(o.score)||0));
+    const reasons=(o.raisons||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
+    const gaps=(o.manques||[]).map(x=>'<li class="gap">À renforcer : '+esc(x)+'</li>').join('');
+    const url=(o.url&&/^https?:/.test(o.url))?o.url:'';
+    return '<div class="offer"><div class="offer-top"><div><h4>'+esc(o.poste)+'</h4><div class="co">'+esc(o.entreprise)+(o.lieu?' · '+esc(o.lieu):'')+'</div><span class="tag">'+esc(o.contrat)+'</span></div><div class="score" style="background:'+scoreColor(sc)+'">'+sc+'</div></div><ul>'+reasons+gaps+'</ul>'+(url?'<a class="apply" href="'+url+'" target="_blank" rel="noopener">Voir l\'offre ↗</a>':'')+'</div>';
+  }).join('')+'</div>';
+}
+
+async function runMatch(){
+  const cs=selectedContracts();
+  if(!cs.length){showToast('Choisis au moins un contrat');return;}
+  const metier=document.getElementById('m-metier').value.trim();
+  const lieu=document.getElementById('m-lieu').value.trim();
+  const btn=document.getElementById('match-btn');
+  const res=document.getElementById('results');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>Recherche en cours…';
+  res.innerHTML='';
+  const p=profile||{};
+  const PROMPT='Tu es un assistant de recherche d\'emploi. Recherche sur le web des offres RÉELLES et ACTUELLES en France correspondant à ce candidat, puis classe-les.\n\nPROFIL:\nMétiers visés: '+(metier||p.metiers||'')+'\nCompétences: '+(p.skills||'')+'\nExpériences: '+(p.experience||'')+'\nFormation: '+(p.education||'')+'\nLocalisation souhaitée: '+(lieu||'')+'\n\nCONTRATS RECHERCHÉS (uniquement ceux-ci): '+cs.join(', ')+'\n\nCherche des offres publiées récemment sur des sites français (France Travail, Indeed, Welcome to the Jungle, HelloWork, LinkedIn, l\'Etudiant pour stage/alternance). Ne retiens que les contrats demandés et la zone indiquée.\n\nRetourne UNIQUEMENT un JSON valide, sans markdown ni texte autour:\n{"offres":[{"poste":"","entreprise":"","lieu":"","contrat":"","score":85,"raisons":["pourquoi ça matche"],"manques":["compétence à renforcer"],"url":"lien vers l\'offre ou la page de résultats"}]}\nClasse par score décroissant (0-100). Maximum 8 offres. Si l\'URL exacte de l\'offre est incertaine, mets l\'URL de la page de résultats du site.';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:apiHeaders(),
+      body:JSON.stringify({model:'claude-sonnet-5',max_tokens:4000,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:PROMPT}]})
+    });
+    const data=await r.json();
+    if(data.error) throw new Error(data.error.message);
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    const clean=text.replace(/```json|```/g,'').trim();
+    const i=clean.indexOf('{'); const j=clean.lastIndexOf('}');
+    const parsed=JSON.parse(clean.slice(i,j+1));
+    renderOffers(parsed.offres||[]);
+  }catch(e){
+    res.innerHTML='<div class="card"><div class="card-head">Matching automatique indisponible</div><p class="muted-note">La recherche automatique n\'a pas pu s\'exécuter ('+esc((e.message||'erreur').slice(0,140))+'). Cela arrive si l\'environnement ne fournit pas l\'accès à l\'API. Utilise les recherches directes ci-dessous — filtrées par contrat, elles fonctionnent toujours.</p></div>';
+  }finally{
+    btn.disabled=false; btn.innerHTML='🔎 Matcher avec des offres en ligne';
+  }
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+</script>
+</body>
+</html>
